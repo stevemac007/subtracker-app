@@ -1,0 +1,84 @@
+import { useState, useEffect } from "react";
+import { dbAll, dbGet } from "../db.js";
+import { fmt, dateLabel } from "../utils.js";
+import GlobalStyles from "../GlobalStyles.jsx";
+
+export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume }) {
+    const teamName = dbGet(db, "SELECT name FROM team WHERE id=1")?.name ?? "My Team";
+    const inProgress = dbAll(db, "SELECT * FROM games WHERE finished=0 ORDER BY id DESC");
+    const recentDone = dbAll(db, "SELECT * FROM games WHERE finished=1 ORDER BY id DESC LIMIT 5");
+
+    // PWA install prompt
+    const [installPrompt, setInstallPrompt] = useState(null);
+    useEffect(() => {
+        const check = () => { if (window.__pwaInstallPrompt) setInstallPrompt(window.__pwaInstallPrompt); };
+        check();
+        window.addEventListener('pwaPromptReady', check);
+        return () => window.removeEventListener('pwaPromptReady', check);
+    }, []);
+    const handleInstall = async () => {
+        if (!installPrompt) return;
+        installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
+        if (outcome === 'accepted') { window.__pwaInstallPrompt = null; setInstallPrompt(null); }
+    };
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    return (
+        <div className="app">
+            <GlobalStyles />
+            <div className="hdr">
+                <span className="hdr-title">SUBTRACKER</span>
+                <span className="hdr-team">{teamName}</span>
+                <div className="hdr-acts">
+                    <button className="hbtn" onClick={onRoster}>ROSTER</button>
+                    <button className="hbtn" onClick={onHistory}>HISTORY</button>
+                </div>
+            </div>
+            <div className="scroll-area">
+                {inProgress.length > 0 && <>
+                    <div className="sec-hd">IN PROGRESS</div>
+                    {inProgress.map(g => (
+                        <div key={g.id} className="game-card" onClick={() => onResume(g.id)}>
+                            <div className="game-card-top">
+                                <span className="game-opp">vs {g.opponent}</span>
+                                <span className="game-badge gbadge-live">RESUME →</span>
+                            </div>
+                            <div className="game-meta"><span>{dateLabel(g.date)}</span><span>{fmt(g.total_secs)} elapsed</span></div>
+                        </div>
+                    ))}
+                </>}
+
+                <div className="sec-hd" style={{ marginTop: inProgress.length ? 12 : 0 }}>
+                    <button className="btn-primary" style={{ fontSize: 16, padding: "10px 28px", letterSpacing: 2 }} onClick={onNewGame}>
+                        + NEW GAME
+                    </button>
+                </div>
+
+                {recentDone.length > 0 && <>
+                    <div className="sec-hd" style={{ marginTop: 16 }}>RECENT GAMES</div>
+                    {recentDone.map(g => (
+                        <div key={g.id} className="game-card" onClick={() => onHistory(g.id)}>
+                            <div className="game-card-top">
+                                <span className="game-opp">vs {g.opponent}</span>
+                                <span className="game-badge gbadge-done">DONE</span>
+                            </div>
+                            <div className="game-meta"><span>{dateLabel(g.date)}</span><span>{fmt(g.total_secs)}</span></div>
+                        </div>
+                    ))}
+                </>}
+
+                {installPrompt && !isStandalone && (
+                    <button className="btn-ghost" onClick={handleInstall}
+                        style={{ width: "100%", marginTop: 24, padding: "10px", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        📲 INSTALL APP
+                    </button>
+                )}
+
+                <div style={{ textAlign: "center", marginTop: 20, paddingBottom: 8, fontSize: 10, fontFamily: "'DM Mono',monospace", color: "var(--text-dim)", opacity: 0.5 }}>
+                    build {__BUILD_NUMBER__}
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" fill="none">
+  <!-- Half court outline -->
+  <rect x="100" y="60" width="400" height="280" rx="4" stroke="#f5a623" stroke-width="2" opacity=".25"/>
+  <!-- Center line -->
+  <line x1="300" y1="60" x2="300" y2="340" stroke="#f5a623" stroke-width="2" opacity=".2"/>
+  <!-- Center circle -->
+  <circle cx="300" cy="200" r="50" stroke="#f5a623" stroke-width="2" opacity=".2"/>
+  <circle cx="300" cy="200" r="4" fill="#f5a623" opacity=".2"/>
+
+  <!-- Free throw areas -->
+  <rect x="100" y="130" width="120" height="140" rx="2" stroke="#f5a623" stroke-width="1.5" opacity=".15"/>
+  <rect x="380" y="130" width="120" height="140" rx="2" stroke="#f5a623" stroke-width="1.5" opacity=".15"/>
+
+  <!-- Three point arcs (simplified) -->
+  <path d="M100 100 Q200 200 100 300" stroke="#f5a623" stroke-width="1.5" opacity=".12" fill="none"/>
+  <path d="M500 100 Q400 200 500 300" stroke="#f5a623" stroke-width="1.5" opacity=".12" fill="none"/>
+
+  <!-- Hoops -->
+  <circle cx="115" cy="200" r="10" stroke="#f5a623" stroke-width="2" opacity=".3"/>
+  <circle cx="485" cy="200" r="10" stroke="#f5a623" stroke-width="2" opacity=".3"/>
+
+  <!-- Large plus icon in center -->
+  <g stroke="#f5a623" stroke-width="5" stroke-linecap="round" opacity=".6">
+    <line x1="300" y1="175" x2="300" y2="225"/>
+    <line x1="275" y1="200" x2="325" y2="200"/>
+  </g>
+
+  <!-- Whistle icon bottom-right -->
+  <g transform="translate(440, 310)" opacity=".35">
+    <circle cx="0" cy="0" r="12" stroke="#f5a623" stroke-width="2"/>
+    <line x1="10" y1="-7" x2="30" y2="-20" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="30" cy="-20" r="3" fill="#f5a623" opacity=".5"/>
+    <!-- Sound waves -->
+    <path d="M34 -26 Q40 -30 34 -34" stroke="#f5a623" stroke-width="1.5" fill="none" opacity=".5"/>
+    <path d="M38 -24 Q46 -30 38 -36" stroke="#f5a623" stroke-width="1" fill="none" opacity=".3"/>
+  </g>
+
+  <!-- Basketball icon bottom-left -->
+  <g transform="translate(160, 320)" opacity=".3">
+    <circle cx="0" cy="0" r="16" stroke="#f5a623" stroke-width="2"/>
+    <line x1="-16" y1="0" x2="16" y2="0" stroke="#f5a623" stroke-width="1"/>
+    <line x1="0" y1="-16" x2="0" y2="16" stroke="#f5a623" stroke-width="1"/>
+    <path d="M-6 -16 Q-10 0 -6 16" stroke="#f5a623" stroke-width="1" fill="none"/>
+    <path d="M6 -16 Q10 0 6 16" stroke="#f5a623" stroke-width="1" fill="none"/>
+  </g>
+</svg>

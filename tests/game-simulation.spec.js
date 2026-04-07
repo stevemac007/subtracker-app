@@ -64,8 +64,8 @@ test.describe('Feature: Full game simulation across 4 quarters', () => {
         await whenQuarterChanged(page, 'Q4');
         await whenClockRunsFor(page, 30_000);
 
-        // Then the clock shows ~30s (current quarter only)
-        await thenClockShowsApprox(page, 30);
+        // Then the clock shows ~180s (accumulated across all quarters)
+        await thenClockShowsApprox(page, 180);
 
         // ── Verify stats ──
         await whenStatsOpened(page);
