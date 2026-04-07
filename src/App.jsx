@@ -179,6 +179,7 @@ const GlobalStyles = () => (
     .pname { font-weight:600; line-height:1; white-space:nowrap; overflow:hidden; font-size:11px; color:var(--text-mid); }
     .pname-fit { display:inline-block; transform-origin:left center; white-space:nowrap; }
     .ptime { font-family:'DM Mono',monospace; font-size:22px; font-weight:500; color:var(--amber); line-height:1; letter-spacing:1px; text-shadow:0 0 10px rgba(245,166,35,.3); }
+    .pstint { font-family:'DM Mono',monospace; font-size:11px; font-weight:400; line-height:1; letter-spacing:0.5px; opacity:0.7; margin-top:1px; }
     .pbadge { font-family:'Bebas Neue',sans-serif; font-size:10px; letter-spacing:1px; padding:2px 5px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
     .b-on    { color:var(--green); background:rgba(34,197,94,.1);  }
     .b-bnch  { color:var(--blue);  background:rgba(96,165,250,.1); }
@@ -836,6 +837,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
   const [selIn, setSelIn] = useState(new Set());
   const [showStats, setShowStats] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [sortMode, setSortMode] = useState("game"); // "game" | "stint"
   const [eventLog, setEventLog] = useState([]);   // unified log: subs + clock + quarter events
 
   // ── Wall-clock timing ──
@@ -845,11 +847,16 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
   const clockStartWall = useRef(null);
   const stintStart = useRef({});
   const bankedMs = useRef({});
+  // Stint tracking: how long in current court/bench stint (resets on sub)
+  const stintRoleStart = useRef({});   // wall timestamp when current stint started (while clock running)
+  const stintRoleBanked = useRef({});  // accumulated ms in current stint (banked on pause)
 
   // Load existing court times for resumed games
   useEffect(() => {
     const gps = dbAll(db, "SELECT player_id, court_ms FROM game_players WHERE game_id=?", [gameId]);
     gps.forEach(gp => { bankedMs.current[gp.player_id] = gp.court_ms; });
+    // Reset stint tracking on load (stints don't persist across sessions)
+    initialPlayers.forEach(p => { stintRoleBanked.current[p.id] = 0; stintRoleStart.current[p.id] = null; });
     // Load unified event log (subs + clock/quarter events)
     const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
       FROM substitutions s
@@ -914,6 +921,12 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     return s != null ? b + (now - s) : b;
   };
 
+  const liveStintMs = (pid) => {
+    const b = stintRoleBanked.current[pid] ?? 0;
+    const s = stintRoleStart.current[pid];
+    return s != null ? b + (now - s) : b;
+  };
+
   // Persist game time + court times to DB
   const persistTimes = useCallback((wallNow) => {
     const totalSec = Math.floor(totalRunMs.current / 1000);
@@ -941,7 +954,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const w = Date.now();
     clockStartWall.current = w;
     runningRef.current = true;
-    setPlayers(ps => { ps.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; }); return ps; });
+    setPlayers(ps => { ps.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; }); return ps; });
     logEvent('clock_start');
   }, [logEvent]);
 
@@ -955,9 +968,15 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     runningRef.current = false;
     setPlayers(ps => {
       ps.forEach(p => {
+        // Bank court time for on-court players
         if (stintStart.current[p.id] != null) {
           bankedMs.current[p.id] = (bankedMs.current[p.id] ?? 0) + (w - stintStart.current[p.id]);
           stintStart.current[p.id] = null;
+        }
+        // Bank stint time for all players
+        if (stintRoleStart.current[p.id] != null) {
+          stintRoleBanked.current[p.id] = (stintRoleBanked.current[p.id] ?? 0) + (w - stintRoleStart.current[p.id]);
+          stintRoleStart.current[p.id] = null;
         }
       });
       return ps;
@@ -1015,6 +1034,12 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         // Start incoming stint if running
         if (runningRef.current) stintStart.current[iid] = w;
 
+        // Reset stint role timers for both players (new stint begins)
+        stintRoleBanked.current[oid] = 0;
+        stintRoleStart.current[oid] = runningRef.current ? w : null;
+        stintRoleBanked.current[iid] = 0;
+        stintRoleStart.current[iid] = runningRef.current ? w : null;
+
         const oi = updated.findIndex(p => p.id === oid), ii = updated.findIndex(p => p.id === iid);
         if (oi >= 0) updated[oi] = { ...updated[oi], onCourt: false };
         if (ii >= 0) updated[ii] = { ...updated[ii], onCourt: true };
@@ -1055,8 +1080,12 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     onEnd();
   };
 
-  const onCourt = players.filter(p => p.onCourt);
-  const bench = players.filter(p => !p.onCourt);
+  const onCourt = players.filter(p => p.onCourt).sort((a, b) =>
+    sortMode === "stint" ? liveStintMs(b.id) - liveStintMs(a.id) : liveCourtMs(b.id) - liveCourtMs(a.id)
+  );
+  const bench = players.filter(p => !p.onCourt).sort((a, b) =>
+    sortMode === "stint" ? liveStintMs(b.id) - liveStintMs(a.id) : liveCourtMs(b.id) - liveCourtMs(a.id)
+  );
   const hasSel = selOut.size > 0 || selIn.size > 0;
   const isRunning = runningRef.current;
   const opponent = gameRow?.opponent ?? "Opponent";
@@ -1091,6 +1120,11 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
               <span className="period-pill">{["Q1", "Q2", "Q3", "Q4", "OT"][quarter - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
             </div>
           </div>
+          <button className={`hbtn${sortMode === "stint" ? " active" : ""}`}
+            style={{ writingMode: "vertical-lr", padding: "8px 4px", fontSize: 10, letterSpacing: 2, lineHeight: 1 }}
+            onClick={() => setSortMode(s => s === "game" ? "stint" : "game")}>
+            {sortMode === "game" ? "GAME" : "STINT"}
+          </button>
         </div>
 
         <div className="court-area">
@@ -1105,7 +1139,11 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                 return (
                   <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}`} onClick={() => tapPlayer(p.id)}>
                     <div className="pnum">#{p.number}</div>
-                    <div className="pinfo"><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div><FitName>{p.name}</FitName></div>
+                    <div className="pinfo">
+                      <div className="ptime">{fmtMs(liveCourtMs(p.id))}</div>
+                      <div className="pstint" style={{ color: "var(--green)" }}>▲ {fmtMs(liveStintMs(p.id))}</div>
+                      <FitName>{p.name}</FitName>
+                    </div>
                     <span className={`pbadge ${sel ? "b-out" : "b-on"}`}>{sel ? "OUT ▼" : "ON"}</span>
                   </div>
                 );
@@ -1123,7 +1161,11 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                 return (
                   <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}`} onClick={() => tapPlayer(p.id)}>
                     <div className="pnum">#{p.number}</div>
-                    <div className="pinfo"><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div><FitName>{p.name}</FitName></div>
+                    <div className="pinfo">
+                      <div className="ptime">{fmtMs(liveCourtMs(p.id))}</div>
+                      <div className="pstint" style={{ color: "var(--blue)" }}>▼ {fmtMs(liveStintMs(p.id))}</div>
+                      <FitName>{p.name}</FitName>
+                    </div>
                     <span className={`pbadge ${sel ? "b-in" : "b-bnch"}`}>{sel ? "IN ▲" : "BENCH"}</span>
                   </div>
                 );
