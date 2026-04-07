@@ -76,6 +76,16 @@ function applySchema(db) {
       player_in_id  INTEGER NOT NULL REFERENCES players(id),
       created_at    TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS game_events (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_id       INTEGER NOT NULL REFERENCES games(id),
+      event_type    TEXT NOT NULL,
+      game_time_sec INTEGER NOT NULL,
+      quarter       INTEGER NOT NULL DEFAULT 1,
+      detail        TEXT DEFAULT '',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -107,13 +117,13 @@ const GlobalStyles = () => (
       --red: #ef4444;   --red-bg: rgba(239,68,68,.10);   --red-bd: rgba(239,68,68,.40);
       --blue: #60a5fa;  --text: #ede0cc; --text-dim: #7a6548; --text-mid: #a8906c;
     }
-    html,body { height:100%; overflow:hidden; }
+    html,body { height:100dvh; overflow:hidden; }
     body {
       background: var(--court); color: var(--text); font-family:'Inter',sans-serif;
       background-image: repeating-linear-gradient(90deg,transparent 0,transparent 44px,rgba(255,255,255,.012) 44px,rgba(255,255,255,.012) 46px);
     }
-    #root { height:100vh; display:flex; flex-direction:column; }
-    .app { display:flex; flex-direction:column; height:100vh; max-width:520px; margin:0 auto; width:100%; overflow:hidden; }
+    #root { height:100dvh; display:flex; flex-direction:column; }
+    .app { display:flex; flex-direction:column; height:100dvh; max-width:520px; margin:0 auto; width:100%; overflow:hidden; }
 
     /* Header */
     .hdr { flex-shrink:0; background:linear-gradient(180deg,#0a0704,var(--panel)); border-bottom:2px solid var(--amber-dim); padding:8px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
@@ -152,8 +162,8 @@ const GlobalStyles = () => (
     .dot-g { background:var(--green); box-shadow:0 0 5px var(--green); }
     .dot-b { background:var(--blue);  box-shadow:0 0 5px var(--blue);  }
     .zone-cnt { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-dim); background:rgba(255,255,255,.04); padding:2px 7px; border-radius:3px; }
-    .pgrid { flex:1; min-height:0; display:flex; flex-direction:column; gap:4px; }
-    .pcard { flex:1; min-height:0; display:flex; align-items:center; background:rgba(255,255,255,.025); border:1px solid var(--panel-border); border-radius:6px; padding:0 8px; gap:7px; cursor:pointer; transition:border-color .12s,background .12s,box-shadow .12s; position:relative; overflow:hidden; -webkit-tap-highlight-color:transparent; user-select:none; }
+    .pgrid { flex:1; min-height:0; display:flex; flex-direction:column; gap:3px; }
+    .pcard { flex:1; min-height:0; display:flex; align-items:center; background:rgba(255,255,255,.025); border:1px solid var(--panel-border); border-radius:6px; padding:4px 8px; gap:4px; cursor:pointer; transition:border-color .12s,background .12s,box-shadow .12s; position:relative; overflow:hidden; -webkit-tap-highlight-color:transparent; user-select:none; }
     .pcard::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:6px 0 0 6px; }
     .pcard.on-c::before { background:var(--green); }
     .pcard.bnch::before { background:var(--blue);  }
@@ -161,22 +171,22 @@ const GlobalStyles = () => (
     .pcard.sel-in  { border-color:var(--green); background:var(--green-bg); box-shadow:0 0 8px rgba(34,197,94,.2); }
     .pcard.on-c:not(.sel-out):hover { border-color:var(--red-bd);   }
     .pcard.bnch:not(.sel-in):hover  { border-color:var(--green-bd); }
-    .pnum { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--amber); min-width:30px; text-align:center; line-height:1; }
+    .pnum { font-family:'Bebas Neue',sans-serif; font-size:18px; color:var(--amber); min-width:26px; text-align:center; line-height:1; flex-shrink:0; }
     .pcard.bnch .pnum    { color:var(--text-mid); }
     .pcard.sel-out .pnum { color:var(--red);   }
     .pcard.sel-in  .pnum { color:var(--green); }
-    .pinfo { flex:1; min-width:0; }
-    .pname { font-weight:600; line-height:1.2; white-space:nowrap; overflow:hidden; }
+    .pinfo { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; }
+    .pname { font-weight:600; line-height:1; white-space:nowrap; overflow:hidden; font-size:11px; color:var(--text-mid); }
     .pname-fit { display:inline-block; transform-origin:left center; white-space:nowrap; }
-    .ptime { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-dim); line-height:1; margin-top:2px; }
-    .pbadge { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:1px; padding:2px 6px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
+    .ptime { font-family:'DM Mono',monospace; font-size:22px; font-weight:500; color:var(--amber); line-height:1; letter-spacing:1px; text-shadow:0 0 10px rgba(245,166,35,.3); }
+    .pbadge { font-family:'Bebas Neue',sans-serif; font-size:10px; letter-spacing:1px; padding:2px 5px; border-radius:3px; white-space:nowrap; flex-shrink:0; }
     .b-on    { color:var(--green); background:rgba(34,197,94,.1);  }
     .b-bnch  { color:var(--blue);  background:rgba(96,165,250,.1); }
     .b-out   { color:var(--red);   background:var(--red-bg);       }
     .b-in    { color:var(--green); background:var(--green-bg);     }
 
     /* Sub panel */
-    .sub-panel { flex-shrink:0; background:var(--panel); border-top:1px solid var(--amber-dim); padding:7px 10px 8px; }
+    .sub-panel { flex-shrink:0; background:var(--panel); border-top:1px solid var(--amber-dim); padding:7px 10px calc(8px + env(safe-area-inset-bottom, 0px)); }
     .sub-title { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--amber); text-align:center; margin-bottom:5px; }
     .sub-pairs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px; }
     .spair { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.04); border-radius:4px; padding:4px 8px; font-size:13px; }
@@ -247,8 +257,8 @@ const GlobalStyles = () => (
     .srow { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--panel-border); font-size:13px; }
     .srow:last-child { border-bottom:none; }
     .srow-num { color:var(--amber); font-family:'Bebas Neue',sans-serif; margin-right:6px; }
-    .srow-time { font-family:'DM Mono',monospace; color:var(--amber); font-size:12px; }
-    .srow-pct  { font-size:10px; color:var(--text-dim); }
+    .srow-time { font-family:'DM Mono',monospace; color:var(--amber); font-size:18px; }
+    .srow-pct  { font-size:15px; color:var(--text-dim); }
 
     /* Log entry */
     .log-entry { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--panel-border); font-size:12px; color:var(--text-dim); }
@@ -271,8 +281,8 @@ const today = () => new Date().toISOString().slice(0, 10);
 const dateLabel = d => { try { return new Date(d).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }); } catch { return d; } };
 
 // ─── FitName — scales player name to fill available width ─────────────────────
-const BASE_FONT = 14;
-const MAX_FONT = 32;
+const BASE_FONT = 11;
+const MAX_FONT = 18;
 
 function FitName({ children }) {
   const outerRef = useRef(null);
@@ -495,7 +505,7 @@ function HistoryScreen({ db, onBack, onResume }) {
   const [games, setGames] = useState([]);
   const [selected, setSelected] = useState(null);
   const [gamePlayers, setGamePlayers] = useState([]);
-  const [subs, setSubs] = useState([]);
+  const [eventLog, setEventLog] = useState([]);
 
   useEffect(() => {
     setGames(dbAll(db, "SELECT * FROM games ORDER BY id DESC"));
@@ -509,19 +519,30 @@ function HistoryScreen({ db, onBack, onResume }) {
       WHERE gp.game_id=? ORDER BY gp.court_ms DESC
     `, [g.id]);
     setGamePlayers(gp);
-    const sl = dbAll(db, `
-      SELECT s.*, po.name as out_name, pi.name as in_name
+    const subs = dbAll(db, `
+      SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
       WHERE s.game_id=? ORDER BY s.id
     `, [g.id]);
-    setSubs(sl);
+    const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+      FROM game_events WHERE game_id=? ORDER BY id`, [g.id]);
+    const merged = [
+      ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
+      ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+    ];
+    merged.sort((a, b) => {
+      if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+      return a.sortId - b.sortId;
+    });
+    setEventLog(merged.map((e, i) => ({ ...e, ts: `h-${i}` })));
   };
 
   const deleteGame = (id) => {
     if (!confirm("Delete this game and all its data?")) return;
     dbRun(db, "DELETE FROM substitutions WHERE game_id=?", [id]);
+    dbRun(db, "DELETE FROM game_events WHERE game_id=?", [id]);
     dbRun(db, "DELETE FROM game_players WHERE game_id=?", [id]);
     dbRun(db, "DELETE FROM games WHERE id=?", [id]);
     setGames(gs => gs.filter(g => g.id !== id));
@@ -546,7 +567,8 @@ function HistoryScreen({ db, onBack, onResume }) {
         </div>
         <div style={{ marginBottom: 16 }}>
           {gamePlayers.map(gp => {
-            const pct = selected.total_secs > 0 ? Math.round(gp.court_ms / 1000 / selected.total_secs * 100) : 0;
+            const totalMs = selected.total_secs > 0 ? selected.total_secs * 1000 : 1;
+            const pct = (gp.court_ms / totalMs * 100).toFixed(1);
             return (
               <div key={gp.id} className="srow">
                 <div><span className="srow-num">#{gp.number}</span><span style={{ fontWeight: 600 }}>{gp.name}</span>
@@ -560,14 +582,19 @@ function HistoryScreen({ db, onBack, onResume }) {
             );
           })}
         </div>
-        <div className="sec-hd">SUBSTITUTIONS <span className="sec-hd-sub">{subs.length} total</span></div>
-        {subs.length === 0 && <div className="empty">No substitutions recorded</div>}
-        {subs.map(s => (
-          <div key={s.id} className="log-entry">
-            <span className="log-t">{s.quarter === 5 ? "OT" : `Q${s.quarter}`} {fmt(s.game_time_sec)}</span>
-            <span style={{ color: "var(--red)", fontWeight: 600 }}>{s.out_name}</span>
-            <span style={{ color: "var(--text-dim)" }}>→</span>
-            <span style={{ color: "var(--green)", fontWeight: 600 }}>{s.in_name}</span>
+        <div className="sec-hd">GAME LOG <span className="sec-hd-sub">{eventLog.length} events</span></div>
+        {eventLog.length === 0 && <div className="empty">No events recorded</div>}
+        {eventLog.map(e => (
+          <div key={e.ts} className="log-entry">
+            <span className="log-t">{e.quarter === 5 ? "OT" : `Q${e.quarter}`} {e.time}</span>
+            {e.type === 'sub' && <>
+              <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
+              <span style={{ color: "var(--text-dim)" }}>→</span>
+              <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
+            </>}
+            {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
+            {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
+            {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
           </div>
         ))}
         {selected.notes ? <div style={{ marginTop: 16, padding: 10, background: "rgba(255,255,255,.03)", borderRadius: 6, fontSize: 12, color: "var(--text-dim)" }}>{selected.notes}</div> : null}
@@ -721,6 +748,23 @@ function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume }) {
   const inProgress = dbAll(db, "SELECT * FROM games WHERE finished=0 ORDER BY id DESC");
   const recentDone = dbAll(db, "SELECT * FROM games WHERE finished=1 ORDER BY id DESC LIMIT 5");
 
+  // PWA install prompt
+  const [installPrompt, setInstallPrompt] = useState(null);
+  useEffect(() => {
+    const check = () => { if (window.__pwaInstallPrompt) setInstallPrompt(window.__pwaInstallPrompt); };
+    check();
+    window.addEventListener('pwaPromptReady', check);
+    return () => window.removeEventListener('pwaPromptReady', check);
+  }, []);
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') { window.__pwaInstallPrompt = null; setInstallPrompt(null); }
+  };
+  // Hide if already running as installed PWA
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
   return (
     <div className="app">
       <GlobalStyles />
@@ -764,6 +808,17 @@ function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume }) {
             </div>
           ))}
         </>}
+
+        {installPrompt && !isStandalone && (
+          <button className="btn-ghost" onClick={handleInstall}
+            style={{ width: "100%", marginTop: 24, padding: "10px", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            📲 INSTALL APP
+          </button>
+        )}
+
+        <div style={{ textAlign: "center", marginTop: 20, paddingBottom: 8, fontSize: 10, fontFamily: "'DM Mono',monospace", color: "var(--text-dim)", opacity: 0.5 }}>
+          build {__BUILD_NUMBER__}
+        </div>
       </div>
     </div>
   );
@@ -781,11 +836,12 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
   const [selIn, setSelIn] = useState(new Set());
   const [showStats, setShowStats] = useState(false);
   const [showLog, setShowLog] = useState(false);
-  const [subLog, setSubLog] = useState([]);   // in-memory for display
+  const [eventLog, setEventLog] = useState([]);   // unified log: subs + clock + quarter events
 
   // ── Wall-clock timing ──
   const runningRef = useRef(false);
-  const gameAccMs = useRef((gameRow?.total_secs ?? 0) * 1000);
+  const gameAccMs = useRef((gameRow?.total_secs ?? 0) * 1000);  // resettable clock display
+  const totalRunMs = useRef((gameRow?.total_secs ?? 0) * 1000); // never resets — true total game time
   const clockStartWall = useRef(null);
   const stintStart = useRef({});
   const bankedMs = useRef({});
@@ -794,13 +850,46 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
   useEffect(() => {
     const gps = dbAll(db, "SELECT player_id, court_ms FROM game_players WHERE game_id=?", [gameId]);
     gps.forEach(gp => { bankedMs.current[gp.player_id] = gp.court_ms; });
-    // Load sub log
-    const sl = dbAll(db, `SELECT s.*,po.name as out_name,pi.name as in_name
+    // Load unified event log (subs + clock/quarter events)
+    const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
-      WHERE s.game_id=? ORDER BY s.id DESC`, [gameId]);
-    setSubLog(sl.map(s => ({ time: fmt(s.game_time_sec), quarter: s.quarter, out: s.out_name, in: s.in_name, ts: s.id })));
+      WHERE s.game_id=? ORDER BY s.id`, [gameId]);
+    const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+      FROM game_events WHERE game_id=? ORDER BY id`, [gameId]);
+    // Merge into a single timeline sorted by id (insertion order)
+    const merged = [
+      ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
+      ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+    ];
+    // Sort: subs and events have separate id sequences, so use created_at order via sortId within table, interleave by rough order
+    // Since both tables auto-increment and are inserted chronologically, we can sort by a combined key
+    merged.sort((a, b) => {
+      // Compare by time string first, then by table insertion order
+      if (a.time !== b.time) return a.time.localeCompare(b.time);
+      return a.sortId - b.sortId;
+    });
+    setEventLog(merged.reverse().map((e, i) => ({ ...e, ts: `loaded-${i}` })));
+  }, []);
+
+  // ── Screen Wake Lock — keep screen on during live game ──
+  useEffect(() => {
+    let wakeLock = null;
+    const request = async () => {
+      try {
+        if ('wakeLock' in navigator && document.visibilityState === 'visible') {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch { /* user denied or not supported — no-op */ }
+    };
+    const onVisChange = () => { if (document.visibilityState === 'visible') request(); };
+    request();
+    document.addEventListener('visibilitychange', onVisChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisChange);
+      wakeLock?.release();
+    };
   }, []);
 
   const [, tick] = useReducer(x => x + 1, 0);
@@ -815,6 +904,9 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
   const displayGameMs = runningRef.current
     ? gameAccMs.current + (now - clockStartWall.current)
     : gameAccMs.current;
+  const liveTotalMs = runningRef.current
+    ? totalRunMs.current + (now - clockStartWall.current)
+    : totalRunMs.current;
 
   const liveCourtMs = (pid) => {
     const b = bankedMs.current[pid] ?? 0;
@@ -824,7 +916,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
   // Persist game time + court times to DB
   const persistTimes = useCallback((wallNow) => {
-    const totalSec = Math.floor(gameAccMs.current / 1000);
+    const totalSec = Math.floor(totalRunMs.current / 1000);
     db.run("UPDATE games SET total_secs=? WHERE id=?", [totalSec, gameId]);
     players.forEach(p => {
       const ms = bankedMs.current[p.id] ?? 0;
@@ -833,18 +925,32 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     saveDb(db);
   }, [db, gameId, players]);
 
+  const logEvent = useCallback((eventType, detail = '') => {
+    const elapsed = runningRef.current
+      ? gameAccMs.current + (Date.now() - clockStartWall.current)
+      : gameAccMs.current;
+    const gameSec = Math.floor(elapsed / 1000);
+    db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
+      [gameId, eventType, gameSec, quarter, detail]);
+    saveDb(db);
+    setEventLog(log => [{ type: eventType, time: fmt(gameSec), quarter, detail, ts: Date.now() + Math.random() }, ...log].slice(0, 100));
+  }, [db, gameId, quarter]);
+
   const startClock = useCallback(() => {
     if (runningRef.current) return;
     const w = Date.now();
     clockStartWall.current = w;
     runningRef.current = true;
     setPlayers(ps => { ps.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; }); return ps; });
-  }, []);
+    logEvent('clock_start');
+  }, [logEvent]);
 
   const pauseClock = useCallback(() => {
     if (!runningRef.current) return;
     const w = Date.now();
-    gameAccMs.current += w - clockStartWall.current;
+    const elapsed = w - clockStartWall.current;
+    gameAccMs.current += elapsed;
+    totalRunMs.current += elapsed;
     clockStartWall.current = null;
     runningRef.current = false;
     setPlayers(ps => {
@@ -857,7 +963,19 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
       return ps;
     });
     persistTimes(w);
-  }, [persistTimes]);
+    logEvent('clock_pause');
+  }, [persistTimes, logEvent]);
+
+  const changeQuarter = (newQ) => {
+    pauseClock();
+    setQuarter(newQ);
+    const gameSec = Math.floor(gameAccMs.current / 1000);
+    const label = newQ === 5 ? 'OT' : `Q${newQ}`;
+    db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
+      [gameId, 'quarter_change', gameSec, newQ, label]);
+    saveDb(db);
+    setEventLog(log => [{ type: 'quarter_change', time: fmt(gameSec), quarter: newQ, detail: label, ts: Date.now() }, ...log].slice(0, 100));
+  };
 
   const toggleClock = () => runningRef.current ? pauseClock() : startClock();
   const zeroClock = () => { pauseClock(); gameAccMs.current = 0; };
@@ -910,15 +1028,15 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
           [bankedMs.current[iid] ?? 0, gameId, iid]);
 
-        newLog.push({ time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
+        newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
       });
       // Save game total secs
-      db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(gameAccMs.current / 1000), gameId]);
+      db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
       saveDb(db);
       return updated;
     });
 
-    setSubLog(log => [...newLog, ...log].slice(0, 50));
+    setEventLog(log => [...newLog, ...log].slice(0, 100));
     setSelOut(new Set()); setSelIn(new Set());
   };
 
@@ -926,7 +1044,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
   const endGame = () => {
     pauseClock();
-    const totalSec = Math.floor(gameAccMs.current / 1000);
+    const totalSec = Math.floor(totalRunMs.current / 1000);
     // Final persist of all court times
     players.forEach(p => {
       db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
@@ -962,7 +1080,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             <div className="qbtns">
               {["Q1", "Q2", "Q3", "Q4", "OT"].map((q, i) => (
                 <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
-                  onClick={() => { setQuarter(i + 1); pauseClock(); }}>{q}</button>
+                  onClick={() => changeQuarter(i + 1)}>{q}</button>
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -987,7 +1105,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                 return (
                   <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}`} onClick={() => tapPlayer(p.id)}>
                     <div className="pnum">#{p.number}</div>
-                    <div className="pinfo"><FitName>{p.name}</FitName><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div></div>
+                    <div className="pinfo"><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div><FitName>{p.name}</FitName></div>
                     <span className={`pbadge ${sel ? "b-out" : "b-on"}`}>{sel ? "OUT ▼" : "ON"}</span>
                   </div>
                 );
@@ -1005,7 +1123,7 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                 return (
                   <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}`} onClick={() => tapPlayer(p.id)}>
                     <div className="pnum">#{p.number}</div>
-                    <div className="pinfo"><FitName>{p.name}</FitName><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div></div>
+                    <div className="pinfo"><div className="ptime">{fmtMs(liveCourtMs(p.id))}</div><FitName>{p.name}</FitName></div>
                     <span className={`pbadge ${sel ? "b-in" : "b-bnch"}`}>{sel ? "IN ▲" : "BENCH"}</span>
                   </div>
                 );
@@ -1045,13 +1163,14 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             <div className="modal-title">PLAYER STATS</div>
             {[...players].sort((a, b) => liveCourtMs(b.id) - liveCourtMs(a.id)).map(p => {
               const ms = liveCourtMs(p.id);
-              const pct = displayGameMs > 0 ? Math.round(ms / displayGameMs * 100) : 0;
+              const totalMs = liveTotalMs > 0 ? liveTotalMs : 1;
+              const pct = (ms / totalMs * 100).toFixed(1);
               return (
                 <div key={p.id} className="srow">
                   <div><span className="srow-num">#{p.number}</span><span style={{ fontWeight: 600 }}>{p.name}</span>
                     {p.onCourt && <span style={{ fontSize: 9, color: "var(--green)", marginLeft: 6 }}>● LIVE</span>}
                   </div>
-                  <div style={{ textAlign: "right" }}><div className="srow-time">{fmtMs(ms)}</div><div className="srow-pct">{pct}%</div></div>
+                  <div style={{ textAlign: "right" }}><div className="srow-time" style={{ fontSize: 18 }}>{fmtMs(ms)}</div><div className="srow-pct" style={{ fontSize: 15 }}>{pct}%</div></div>
                 </div>
               );
             })}
@@ -1063,14 +1182,19 @@ function GameScreen({ db, gameId, initialPlayers, onEnd }) {
       {showLog && (
         <div className="overlay" onClick={() => setShowLog(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-title">SUB LOG</div>
-            {subLog.length === 0 && <div className="empty">No substitutions yet</div>}
-            {subLog.map(e => (
+            <div className="modal-title">GAME LOG</div>
+            {eventLog.length === 0 && <div className="empty">No events yet</div>}
+            {eventLog.map(e => (
               <div key={e.ts} className="log-entry">
                 <span className="log-t">{e.quarter === 5 ? "OT" : `Q${e.quarter}`} {e.time}</span>
-                <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
-                <span style={{ color: "var(--text-dim)" }}>→</span>
-                <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
+                {e.type === 'sub' && <>
+                  <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
+                  <span style={{ color: "var(--text-dim)" }}>→</span>
+                  <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
+                </>}
+                {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
+                {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
+                {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
               </div>
             ))}
             <button className="hbtn" style={{ width: "100%", marginTop: 14, padding: "9px", fontSize: 13 }} onClick={() => setShowLog(false)}>CLOSE</button>

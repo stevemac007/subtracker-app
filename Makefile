@@ -1,4 +1,4 @@
-.PHONY: install build deploy deploy-prod clean
+.PHONY: install build deploy deploy-prod test test-headed clean
 
 install:
 	npm install
@@ -12,6 +12,12 @@ deploy: build
 
 deploy-prod: build
 	netlify deploy --dir=dist --prod
+
+test: build
+	npx playwright test
+
+test-headed: build
+	npx playwright test --headed
 
 clean:
 	rm -rf dist node_modules

@@ -1,0 +1,17 @@
+{
+    "name": "SubTracker",
+    "short_name": "SubTracker",
+    "description": "Basketball substitution tracker for coaches",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#131009",
+    "theme_color": "#f5a623",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}
