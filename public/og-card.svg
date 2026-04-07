@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#131009"/>
+
+  <!-- Subtle court line pattern background -->
+  <g opacity=".06" stroke="#f5a623" stroke-width="1">
+    <!-- Vertical court lines -->
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+    <!-- Horizontal -->
+    <line x1="0" y1="157" x2="1200" y2="157"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="473" x2="1200" y2="473"/>
+    <!-- Center circle -->
+    <circle cx="600" cy="315" r="120"/>
+    <circle cx="600" cy="315" r="5"/>
+  </g>
+
+  <!-- Basketball texture overlay -->
+  <g opacity=".04" stroke="#f5a623" stroke-width="2">
+    <path d="M400 0 Q350 315 400 630" fill="none"/>
+    <path d="M800 0 Q850 315 800 630" fill="none"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+  </g>
+
+  <!-- App icon (small basketball) -->
+  <g transform="translate(600, 220)">
+    <circle r="60" stroke="#f5a623" stroke-width="3" opacity=".4"/>
+    <line x1="-60" y1="0" x2="60" y2="0" stroke="#f5a623" stroke-width="2" opacity=".25"/>
+    <line x1="0" y1="-60" x2="0" y2="60" stroke="#f5a623" stroke-width="2" opacity=".25"/>
+    <path d="M-22 -60 Q-36 0 -22 60" stroke="#f5a623" stroke-width="1.5" opacity=".2" fill="none"/>
+    <path d="M22 -60 Q36 0 22 60" stroke="#f5a623" stroke-width="1.5" opacity=".2" fill="none"/>
+    <!-- ST inside -->
+    <text y="12" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="40" fill="#f5a623" opacity=".7" letter-spacing="4">ST</text>
+  </g>
+
+  <!-- SUBTRACKER wordmark -->
+  <text x="600" y="360" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="72" fill="#f5a623" letter-spacing="18">SUBTRACKER</text>
+
+  <!-- Amber glow line -->
+  <line x1="350" y1="380" x2="850" y2="380" stroke="#f5a623" stroke-width="2" opacity=".3"/>
+
+  <!-- Subtitle -->
+  <text x="600" y="420" text-anchor="middle" font-family="sans-serif" font-weight="400" font-size="22" fill="#7a6548" letter-spacing="6">BASKETBALL SUBSTITUTION TRACKER</text>
+
+  <!-- Accent dots (green = on court, blue = bench) -->
+  <g transform="translate(440, 480)">
+    <circle cx="0" cy="0" r="5" fill="#22c55e" opacity=".6"/>
+    <circle cx="20" cy="0" r="5" fill="#22c55e" opacity=".6"/>
+    <circle cx="40" cy="0" r="5" fill="#22c55e" opacity=".6"/>
+    <circle cx="60" cy="0" r="5" fill="#22c55e" opacity=".6"/>
+    <circle cx="80" cy="0" r="5" fill="#22c55e" opacity=".6"/>
+    <text x="40" y="20" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#22c55e" opacity=".5" letter-spacing="2">ON COURT</text>
+  </g>
+  <g transform="translate(640, 480)">
+    <circle cx="0" cy="0" r="5" fill="#60a5fa" opacity=".6"/>
+    <circle cx="20" cy="0" r="5" fill="#60a5fa" opacity=".6"/>
+    <circle cx="40" cy="0" r="5" fill="#60a5fa" opacity=".6"/>
+    <circle cx="60" cy="0" r="5" fill="#60a5fa" opacity=".6"/>
+    <circle cx="80" cy="0" r="5" fill="#60a5fa" opacity=".6"/>
+    <text x="40" y="20" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#60a5fa" opacity=".5" letter-spacing="2">BENCH</text>
+  </g>
+
+  <!-- Border accent -->
+  <rect x="2" y="2" width="1196" height="626" rx="4" stroke="#f5a623" stroke-width="1" opacity=".1"/>
+</svg>

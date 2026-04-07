@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" fill="none">
+  <rect width="800" height="600" fill="#131009"/>
+
+  <!-- Subtle court lines background -->
+  <g opacity=".08" stroke="#f5a623" stroke-width="1">
+    <rect x="80" y="80" width="640" height="440" rx="4"/>
+    <line x1="400" y1="80" x2="400" y2="520"/>
+    <circle cx="400" cy="300" r="80"/>
+  </g>
+
+  <!-- Clipboard -->
+  <g transform="translate(160, 100)">
+    <rect width="200" height="260" rx="12" stroke="#f5a623" stroke-width="2.5" opacity=".6"/>
+    <rect x="60" y="-12" width="80" height="24" rx="6" stroke="#f5a623" stroke-width="2" opacity=".5"/>
+    <circle cx="100" cy="0" r="4" fill="#f5a623" opacity=".3"/>
+
+    <!-- Court diagram on clipboard -->
+    <rect x="20" y="30" width="160" height="100" rx="3" stroke="#7a6548" stroke-width="1" opacity=".4"/>
+    <line x1="100" y1="30" x2="100" y2="130" stroke="#7a6548" stroke-width="1" opacity=".3"/>
+    <circle cx="100" cy="80" r="20" stroke="#7a6548" stroke-width="1" opacity=".3"/>
+
+    <!-- Player dots on court - green for on-court -->
+    <circle cx="50" cy="60" r="6" fill="#22c55e" opacity=".8"/>
+    <circle cx="80" cy="90" r="6" fill="#22c55e" opacity=".8"/>
+    <circle cx="120" cy="65" r="6" fill="#22c55e" opacity=".8"/>
+    <circle cx="140" cy="95" r="6" fill="#22c55e" opacity=".8"/>
+    <circle cx="70" cy="110" r="6" fill="#22c55e" opacity=".8"/>
+
+    <!-- Bench dots - blue -->
+    <circle cx="40" cy="160" r="5" fill="#60a5fa" opacity=".7"/>
+    <circle cx="60" cy="160" r="5" fill="#60a5fa" opacity=".7"/>
+    <circle cx="80" cy="160" r="5" fill="#60a5fa" opacity=".7"/>
+    <circle cx="100" cy="160" r="5" fill="#60a5fa" opacity=".7"/>
+    <circle cx="120" cy="160" r="5" fill="#60a5fa" opacity=".7"/>
+
+    <!-- Labels -->
+    <text x="40" y="150" font-family="sans-serif" font-size="8" fill="#22c55e" opacity=".6" letter-spacing="2">ON COURT</text>
+    <text x="40" y="178" font-family="sans-serif" font-size="8" fill="#60a5fa" opacity=".6" letter-spacing="2">BENCH</text>
+
+    <!-- Roster lines -->
+    <g stroke="#7a6548" stroke-width="1" opacity=".2">
+      <line x1="20" y1="200" x2="180" y2="200"/>
+      <line x1="20" y1="218" x2="180" y2="218"/>
+      <line x1="20" y1="236" x2="180" y2="236"/>
+    </g>
+  </g>
+
+  <!-- Game clock -->
+  <g transform="translate(440, 120)">
+    <rect width="220" height="90" rx="8" fill="#1c1508" stroke="#332310" stroke-width="2"/>
+    <!-- Clock display -->
+    <text x="110" y="58" text-anchor="middle" font-family="monospace" font-weight="700" font-size="48" fill="#f5a623" opacity=".9" letter-spacing="4">12:00</text>
+    <!-- Glow effect -->
+    <text x="110" y="58" text-anchor="middle" font-family="monospace" font-weight="700" font-size="48" fill="#f5a623" opacity=".15" letter-spacing="4" filter="url(#clockGlow)">12:00</text>
+    <!-- Quarter indicator -->
+    <text x="110" y="80" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="12" fill="#7a6548" letter-spacing="4">Q1 · READY</text>
+  </g>
+
+  <!-- Basketball -->
+  <g transform="translate(540, 320)">
+    <circle r="80" stroke="#f5a623" stroke-width="3" opacity=".5"/>
+    <line x1="-80" y1="0" x2="80" y2="0" stroke="#f5a623" stroke-width="2" opacity=".3"/>
+    <line x1="0" y1="-80" x2="0" y2="80" stroke="#f5a623" stroke-width="2" opacity=".3"/>
+    <path d="M-30 -80 Q-50 0 -30 80" stroke="#f5a623" stroke-width="2" opacity=".25" fill="none"/>
+    <path d="M30 -80 Q50 0 30 80" stroke="#f5a623" stroke-width="2" opacity=".25" fill="none"/>
+  </g>
+
+  <!-- Substitution arrows -->
+  <g transform="translate(400, 460)" opacity=".5">
+    <!-- Out arrow (red) -->
+    <g stroke="#ef4444" stroke-width="2.5" stroke-linecap="round">
+      <line x1="-40" y1="0" x2="-10" y2="0"/>
+      <line x1="-18" y1="-7" x2="-10" y2="0"/>
+      <line x1="-18" y1="7" x2="-10" y2="0"/>
+    </g>
+    <!-- Arrow label -->
+    <text x="0" y="4" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#7a6548" letter-spacing="1">SUB</text>
+    <!-- In arrow (green) -->
+    <g stroke="#22c55e" stroke-width="2.5" stroke-linecap="round">
+      <line x1="10" y1="0" x2="40" y2="0"/>
+      <line x1="32" y1="-7" x2="40" y2="0"/>
+      <line x1="32" y1="7" x2="40" y2="0"/>
+    </g>
+  </g>
+
+  <!-- Timer/stopwatch accent -->
+  <g transform="translate(200, 440)" opacity=".35">
+    <circle r="30" stroke="#f5a623" stroke-width="2"/>
+    <rect x="-4" y="-38" width="8" height="10" rx="2" fill="#f5a623" opacity=".6"/>
+    <!-- Clock hands -->
+    <line x1="0" y1="0" x2="0" y2="-18" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="12" y2="8" stroke="#f5a623" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>
+    <circle r="3" fill="#f5a623"/>
+    <!-- Tick marks -->
+    <g stroke="#f5a623" stroke-width="1.5" opacity=".4">
+      <line x1="0" y1="-27" x2="0" y2="-24"/>
+      <line x1="0" y1="24" x2="0" y2="27"/>
+      <line x1="-27" y1="0" x2="-24" y2="0"/>
+      <line x1="24" y1="0" x2="27" y2="0"/>
+    </g>
+  </g>
+
+  <!-- SUBTRACKER wordmark -->
+  <text x="400" y="560" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="36" fill="#f5a623" letter-spacing="12" opacity=".8">SUBTRACKER</text>
+  <text x="400" y="585" text-anchor="middle" font-family="monospace" font-size="12" fill="#7a6548" letter-spacing="4">BASKETBALL SUBSTITUTION TRACKER</text>
+</svg>

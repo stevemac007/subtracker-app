@@ -86,6 +86,15 @@ export default function RosterScreen({ db, onBack }) {
                     <span className="sec-hd-sub">{players.filter(p => p.active).length} active</span>
                 </div>
 
+                {players.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "16px 0" }}>
+                        <img src="/empty-roster.svg" alt="" style={{ width: 180, maxWidth: "50vw", opacity: 0.7, marginBottom: 12 }} />
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--text-dim)", letterSpacing: 1 }}>
+                            Add your first player below
+                        </div>
+                    </div>
+                )}
+
                 {players.map(p => (
                     <div key={p.id} className="player-setup-row">
                         <input className="inp inp-num" value={p.number} maxLength={3} placeholder="#"

@@ -49,6 +49,15 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
                     ))}
                 </>}
 
+                {inProgress.length === 0 && recentDone.length === 0 && (
+                    <div style={{ textAlign: "center", padding: "24px 0 8px" }}>
+                        <img src="/empty-games.svg" alt="" style={{ width: 220, maxWidth: "60vw", opacity: 0.7, marginBottom: 16 }} />
+                        <div style={{ fontFamily: "'DM Mono',monospace", fontSize: 11, color: "var(--text-dim)", letterSpacing: 1, marginBottom: 16 }}>
+                            No games yet — start your first one
+                        </div>
+                    </div>
+                )}
+
                 <div className="sec-hd" style={{ marginTop: inProgress.length ? 12 : 0 }}>
                     <button className="btn-primary" style={{ fontSize: 16, padding: "10px 28px", letterSpacing: 2 }} onClick={onNewGame}>
                         + NEW GAME
