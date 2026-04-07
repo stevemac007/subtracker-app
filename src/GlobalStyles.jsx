@@ -1,20 +1,23 @@
-const GlobalStyles = () => (
-    <style>{`
+import { useTheme } from "./ThemeContext.jsx";
+
+const GlobalStyles = () => {
+    const { vars } = useTheme();
+
+    const varBlock = Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join("\n      ");
+
+    return (
+        <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --court: #131009; --panel: #1c1508; --panel-border: #332310;
-      --amber: #f5a623; --amber-dim: #a06b10;
-      --green: #22c55e; --green-bg: rgba(34,197,94,.10); --green-bd: rgba(34,197,94,.40);
-      --red: #ef4444;   --red-bg: rgba(239,68,68,.10);   --red-bd: rgba(239,68,68,.40);
-      --blue: #60a5fa;  --text: #ede0cc; --text-dim: #7a6548; --text-mid: #a8906c;
+      ${varBlock}
     }
     html,body { height:100dvh; overflow:hidden; }
     body {
       background: var(--court); color: var(--text); font-family:'Inter',sans-serif;
-      background-image: url('/woodgrain.svg'), repeating-linear-gradient(90deg,transparent 0,transparent 44px,rgba(255,255,255,.012) 44px,rgba(255,255,255,.012) 46px);
+      background-image: var(--body-bg-image);
       background-repeat: repeat, repeat;
-      background-size: 200px 200px, auto;
+      background-size: var(--body-bg-size);
     }
     #root { height:100dvh; display:flex; flex-direction:column; }
     .app { display:flex; flex-direction:column; height:100dvh; max-width:520px; margin:0 auto; width:100%; overflow:hidden; position:relative; }
@@ -22,7 +25,7 @@ const GlobalStyles = () => (
     .app > * { position:relative; z-index:1; }
 
     /* Header */
-    .hdr { flex-shrink:0; background:linear-gradient(180deg,#0a0704,var(--panel)); background-image:url('/scoreboard-texture.svg'), linear-gradient(180deg,#0a0704,var(--panel)); background-size:20px 20px, auto; border-bottom:2px solid var(--amber-dim); padding:8px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .hdr { flex-shrink:0; background:var(--hdr-bg); background-image:var(--hdr-bg-image); background-size:var(--hdr-bg-size); border-bottom:2px solid var(--amber-dim); padding:8px 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
     .hdr-title { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--amber); text-shadow:0 0 16px rgba(245,166,35,.5); white-space:nowrap; }
     .hdr-team  { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--text-mid); flex:1; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .hdr-acts  { display:flex; gap:5px; }
@@ -31,7 +34,7 @@ const GlobalStyles = () => (
     .hbtn.active { background:var(--amber); color:#1a0e00; border-color:var(--amber); }
 
     /* Clock bar */
-    .clock-bar { flex-shrink:0; background:var(--panel); background-image:url('/scoreboard-texture.svg'); background-size:20px 20px; border-bottom:1px solid var(--panel-border); padding:6px 14px; display:flex; align-items:center; gap:10px; }
+    .clock-bar { flex-shrink:0; background:var(--panel); background-image:var(--clock-bg-image); background-size:var(--clock-bg-size); border-bottom:1px solid var(--panel-border); padding:6px 14px; display:flex; align-items:center; gap:10px; }
     .clock-disp { font-family:'DM Mono',monospace; font-size:36px; font-weight:500; line-height:1; color:var(--amber); letter-spacing:3px; text-shadow:0 0 20px rgba(245,166,35,.5); min-width:100px; transition:color .2s; }
     .clock-disp.paused { color:var(--text-dim); text-shadow:none; }
     .clock-mid { display:flex; flex-direction:column; gap:4px; flex:1; }
@@ -169,6 +172,7 @@ const GlobalStyles = () => (
     .note { font-size:11px; color:var(--text-dim); text-align:center; margin:8px 0; }
     .note span { font-family:'DM Mono',monospace; color:var(--amber); }
   `}</style>
-);
+    );
+};
 
 export default GlobalStyles;

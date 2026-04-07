@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { dbAll, dbGet } from "../db.js";
 import { fmt, dateLabel } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
+import ThemeChooser from "../ThemeChooser.jsx";
 
 export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume }) {
     const teamName = dbGet(db, "SELECT name FROM team WHERE id=1")?.name ?? "My Team";
@@ -10,11 +11,24 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
 
     // PWA install prompt
     const [installPrompt, setInstallPrompt] = useState(null);
+    const [promptChecked, setPromptChecked] = useState(false);
+    const [updateAvailable, setUpdateAvailable] = useState(false);
     useEffect(() => {
         const check = () => { if (window.__pwaInstallPrompt) setInstallPrompt(window.__pwaInstallPrompt); };
         check();
         window.addEventListener('pwaPromptReady', check);
-        return () => window.removeEventListener('pwaPromptReady', check);
+        const timer = setTimeout(() => setPromptChecked(true), 2000);
+
+        // Listen for SW update
+        const onUpdate = () => setUpdateAvailable(true);
+        if (window.__swWaiting) onUpdate();
+        window.addEventListener('swUpdateAvailable', onUpdate);
+
+        return () => {
+            window.removeEventListener('pwaPromptReady', check);
+            window.removeEventListener('swUpdateAvailable', onUpdate);
+            clearTimeout(timer);
+        };
     }, []);
     const handleInstall = async () => {
         if (!installPrompt) return;
@@ -22,7 +36,13 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
         const { outcome } = await installPrompt.userChoice;
         if (outcome === 'accepted') { window.__pwaInstallPrompt = null; setInstallPrompt(null); }
     };
+    const handleUpdate = () => {
+        if (window.__swWaiting) {
+            window.__swWaiting.postMessage('skipWaiting');
+        }
+    };
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const showOpenInApp = promptChecked && !installPrompt && !isStandalone;
 
     return (
         <div className="app">
@@ -31,11 +51,44 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
                 <span className="hdr-title">SUBTRACKER</span>
                 <span className="hdr-team">{teamName}</span>
                 <div className="hdr-acts">
+                    <ThemeChooser />
                     <button className="hbtn" onClick={onRoster}>ROSTER</button>
                     <button className="hbtn" onClick={onHistory}>HISTORY</button>
                 </div>
             </div>
             <div className="scroll-area">
+                {updateAvailable && (
+                    <button onClick={handleUpdate}
+                        style={{
+                            width: "100%", marginBottom: 14, padding: "10px 14px", fontSize: 12,
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                            background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.4)",
+                            borderRadius: 6, color: "var(--green)", cursor: "pointer",
+                            fontFamily: "'Bebas Neue',sans-serif", letterSpacing: 1.5
+                        }}>
+                        🔄 UPDATE AVAILABLE — TAP TO REFRESH
+                    </button>
+                )}
+
+                {installPrompt && !isStandalone && (
+                    <button className="btn-ghost" onClick={handleInstall}
+                        style={{ width: "100%", marginBottom: 14, padding: "10px", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                        📲 INSTALL APP
+                    </button>
+                )}
+
+                {showOpenInApp && (
+                    <div style={{
+                        width: "100%", marginBottom: 14, padding: "10px 14px", fontSize: 12,
+                        display: "flex", alignItems: "center", gap: 10,
+                        background: "rgba(245,166,35,.08)", border: "1px solid rgba(245,166,35,.25)",
+                        borderRadius: 6, color: "var(--text-mid)"
+                    }}>
+                        <span style={{ fontSize: 20 }}>📱</span>
+                        <span>SubTracker is installed — open it from your home screen for the best experience.</span>
+                    </div>
+                )}
+
                 {inProgress.length > 0 && <>
                     <div className="sec-hd">IN PROGRESS</div>
                     {inProgress.map(g => (
@@ -76,13 +129,6 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
                         </div>
                     ))}
                 </>}
-
-                {installPrompt && !isStandalone && (
-                    <button className="btn-ghost" onClick={handleInstall}
-                        style={{ width: "100%", marginTop: 24, padding: "10px", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                        📲 INSTALL APP
-                    </button>
-                )}
 
                 <div style={{ textAlign: "center", marginTop: 20, paddingBottom: 8, fontSize: 10, fontFamily: "'DM Mono',monospace", color: "var(--text-dim)", opacity: 0.5 }}>
                     build {__BUILD_NUMBER__}
