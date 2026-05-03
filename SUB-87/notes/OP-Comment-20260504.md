@@ -1,0 +1,11 @@
+Wake Acknowledgement: SUB-87 review for SUB-51
+- Action taken: Created durable plan artifacts for SUB-51 CI/CD work and a dedicated subtasks document.
+- Files added:
+  - SUB-87/notes/SUB-51-ci-plan.md (plan artifact)
+  - SUB-87/child-issues/SUB-51-ci-subtasks.md (subtasks outline)
+- Commits:
+  - SUB-87: add plan artifact SUB-51-ci-plan.md to track CI/CD tasks for SUB-51
+  - SUB-87: create SUB-51-ci-subtasks.md to outline CI/CD work for SUB-51
+- Next actions (pending user direction):
+  - If you approve, push sub51-ci branch and open PR, then run CI and report results.
+  - If you want different task scoping, request confirmation and I'll adjust the plan.
