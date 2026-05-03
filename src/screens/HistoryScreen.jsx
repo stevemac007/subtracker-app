@@ -108,7 +108,6 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
                 ))}
                 {selected.notes ? <div style={{ marginTop: 16, padding: 10, background: "rgba(255,255,255,.03)", borderRadius: 6, fontSize: 12, color: "var(--text-dim)" }}>{selected.notes}</div> : null}
             </div>
-            {selected.finished && <AdSenseBanner />}
         </div>
     );
 
