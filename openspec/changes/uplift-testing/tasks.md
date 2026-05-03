@@ -1,0 +1,4 @@
+- Create uplift-testing scaffolding (helpers, test harness).
+- Add a smoke test that covers a minimal game start-to-end path.
+- Integrate with current test runner configuration (if needed).
+- Run tests; fix issues; ensure deterministic results.

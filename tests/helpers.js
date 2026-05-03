@@ -30,6 +30,33 @@ export function zones(page) {
 
 // ── Given steps ──
 
+/** Given a new team has been created via the TeamSelector dropdown */
+export async function givenTeamCreated(page, teamName) {
+    // Open the team selector by clicking the team name in the header
+    await page.locator('.hdr-team').click();
+    await expect(page.locator('.modal-title')).toContainText('SELECT TEAM');
+
+    // Type the new team name and click ADD
+    await page.getByPlaceholder('Team name').fill(teamName);
+    await page.getByRole('button', { name: 'ADD', exact: true }).click();
+
+    // The selector closes and the header should now show the new team name
+    await expect(page.locator('.hdr-team')).toContainText(teamName);
+}
+
+/** Given an existing team has been selected via the TeamSelector dropdown */
+export async function givenTeamSelected(page, teamName) {
+    // Open the team selector by clicking the team name in the header
+    await page.locator('.hdr-team').click();
+    await expect(page.locator('.modal-title')).toContainText('SELECT TEAM');
+
+    // Click the team button matching the name
+    await page.locator('.modal button', { hasText: teamName }).click();
+
+    // The selector closes and the header should now show the selected team name
+    await expect(page.locator('.hdr-team')).toContainText(teamName);
+}
+
 /** Given a fresh app with no data */
 export async function givenFreshApp(page) {
     page.on('console', msg => console.log('PAGE:', msg.type(), msg.text()));

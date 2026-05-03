@@ -1,0 +1,4 @@
+- Issue: SUB-29 Uplift testing
+- Status: in_progress
+- Summary: Set up uplift testing scaffolding and draft a smoke test scaffold.
+- Next action: Implement uplift scaffolding and add a minimal smoke test per plan.md; run tests locally.

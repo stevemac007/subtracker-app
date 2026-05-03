@@ -1,20 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { dbAll, dbRun } from "../db.js";
 import { fmt, fmtMs, dateLabel } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 
-export default function HistoryScreen({ db, onBack, onResume }) {
-    const [games, setGames] = useState([]);
+export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
+    const initialGames = useMemo(() => dbAll(db, "SELECT * FROM games WHERE team_id = ? ORDER BY id DESC", [activeTeamId]), [db, activeTeamId]);
+    const [games, setGames] = useState(initialGames);
     const [selected, setSelected] = useState(null);
     const [gamePlayers, setGamePlayers] = useState([]);
     const [eventLog, setEventLog] = useState([]);
-
-    useEffect(() => {
-        setGames(dbAll(db, "SELECT * FROM games ORDER BY id DESC"));
-    }, [db]);
+    const [selectedPeriodType, setSelectedPeriodType] = useState("quarters");
 
     const selectGame = (g) => {
         setSelected(g);
+        const pt = g.period_type ?? "quarters";
+        setSelectedPeriodType(pt);
         const gp = dbAll(db, `
       SELECT gp.*, p.name, p.number
       FROM game_players gp JOIN players p ON p.id=gp.player_id
@@ -88,7 +88,7 @@ export default function HistoryScreen({ db, onBack, onResume }) {
                 {eventLog.length === 0 && <div className="empty">No events recorded</div>}
                 {eventLog.map(e => (
                     <div key={e.ts} className="log-entry">
-                        <span className="log-t">{e.quarter === 5 ? "OT" : `Q${e.quarter}`} {e.time}</span>
+                        <span className="log-t">{selectedPeriodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
                         {e.type === 'sub' && <>
                             <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
                             <span style={{ color: "var(--text-dim)" }}>→</span>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { loadSqlJs, dbAll, saveDb } from "./db.js";
+import { loadSqlJs, dbAll, getActiveTeamId, setActiveTeamId } from "./db.js";
 import GlobalStyles from "./GlobalStyles.jsx";
 import Loader from "./Loader.jsx";
 import HomeScreen from "./screens/HomeScreen.jsx";
@@ -13,11 +13,20 @@ export default function App() {
   const [dbError, setDbError] = useState(null);
   const [screen, setScreen] = useState("home");
   const [gameCtx, setGameCtx] = useState(null);
+  const [activeTeamId, setActiveTeamIdState] = useState(null);
 
   useEffect(() => {
     loadSqlJs()
-      .then(database => setDb(database))
+      .then(database => {
+        setDb(database);
+        setActiveTeamIdState(getActiveTeamId(database));
+      })
       .catch(err => setDbError(err.message));
+  }, []);
+
+  const setActiveTeam = useCallback((id) => {
+    setActiveTeamIdState(id);
+    setActiveTeamId(id);
   }, []);
 
   const resumeGame = useCallback((gid) => {
@@ -46,11 +55,11 @@ export default function App() {
 
   if (!db) return (<><GlobalStyles /><Loader msg="LOADING DATABASE…" /></>);
 
-  if (screen === "roster") return <RosterScreen db={db} onBack={() => setScreen("home")} />;
-  if (screen === "history") return <HistoryScreen db={db} onBack={() => setScreen("home")} onResume={resumeGame} />;
+  if (screen === "roster") return <RosterScreen key={activeTeamId} db={db} onBack={() => setScreen("home")} activeTeamId={activeTeamId} onTeamChange={setActiveTeam} />;
+  if (screen === "history") return <HistoryScreen db={db} onBack={() => setScreen("home")} onResume={resumeGame} activeTeamId={activeTeamId} />;
   if (screen === "newgame") return (
     <NewGameScreen db={db} onBack={() => setScreen("home")}
-      onStart={ctx => { setGameCtx(ctx); setScreen("game"); }} />
+      onStart={ctx => { setGameCtx(ctx); setScreen("game"); }} activeTeamId={activeTeamId} />
   );
   if (screen === "game" && gameCtx) return (
     <GameScreen db={db} gameId={gameCtx.gameId} initialPlayers={gameCtx.players}
@@ -63,6 +72,8 @@ export default function App() {
       onHistory={() => setScreen("history")}
       onRoster={() => setScreen("roster")}
       onResume={resumeGame}
+      activeTeamId={activeTeamId}
+      onTeamChange={setActiveTeam}
     />
   );
 }

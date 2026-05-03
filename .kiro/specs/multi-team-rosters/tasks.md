@@ -6,15 +6,15 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
 
 ## Tasks
 
-- [ ] 1. Update database schema and helpers
-  - [ ] 1.1 Add `team_id` column to `players` and `games` tables in `applySchema()` in `src/db.js`
+- [x] 1. Update database schema and helpers
+  - [x] 1.1 Add `team_id` column to `players` and `games` tables in `applySchema()` in `src/db.js`
     - Update `CREATE TABLE IF NOT EXISTS players` to include `team_id INTEGER NOT NULL DEFAULT 1 REFERENCES team(id)`
     - Update `CREATE TABLE IF NOT EXISTS games` to include `team_id INTEGER NOT NULL DEFAULT 1 REFERENCES team(id)`
     - Add `ALTER TABLE players ADD COLUMN team_id ...` and `ALTER TABLE games ADD COLUMN team_id ...` wrapped in try/catch for idempotency
     - Remove the hardcoded `INSERT OR IGNORE INTO team (id, name) VALUES (1, 'My Team')` and replace with a conditional insert that only seeds if the team table is empty
     - _Requirements: 1.2, 3.2, 4.1_
 
-  - [ ] 1.2 Add team CRUD helper functions in `src/db.js`
+  - [x] 1.2 Add team CRUD helper functions in `src/db.js`
     - `createTeam(db, name)` — inserts a new team row, returns the new team ID
     - `deleteTeam(db, teamId)` — cascade deletes team, its players, their game_players rows, games, substitutions, and game_events in correct order
     - `getTeams(db)` — returns all teams ordered by ID
@@ -37,17 +37,17 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - For any team ID, writing to localStorage and reading back returns the same ID
     - **Validates: Requirements 2.3, 2.5**
 
-- [ ] 2. Checkpoint — Ensure schema and helpers are correct
+- [x] 2. Checkpoint — Ensure schema and helpers are correct
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Thread `activeTeamId` through App and create TeamSelector
-  - [ ] 3.1 Update `App.jsx` to manage `activeTeamId` state
+- [x] 3. Thread `activeTeamId` through App and create TeamSelector
+  - [x] 3.1 Update `App.jsx` to manage `activeTeamId` state
     - Add `activeTeamId` state initialized from `getActiveTeamId()` after DB loads
     - Create `setActiveTeam(id)` callback that updates state and calls `setActiveTeamId(id)`
     - Pass `activeTeamId` as a prop to HomeScreen, RosterScreen, NewGameScreen, HistoryScreen
     - _Requirements: 2.3, 2.5_
 
-  - [ ] 3.2 Create `TeamSelector` component in `src/TeamSelector.jsx`
+  - [x] 3.2 Create `TeamSelector` component in `src/TeamSelector.jsx`
     - Dropdown overlay listing all teams from `getTeams(db)`
     - Highlight the active team
     - Inline "Add Team" row with text input and validation (non-empty, non-whitespace)
@@ -56,8 +56,8 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - Call `onTeamCreated(teamId)` after a new team is created (which also sets it as active)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 2.2, 2.3_
 
-- [ ] 4. Update HomeScreen for team scoping and team selector
-  - [ ] 4.1 Modify `HomeScreen.jsx` to scope queries and show team selector
+- [x] 4. Update HomeScreen for team scoping and team selector
+  - [x] 4.1 Modify `HomeScreen.jsx` to scope queries and show team selector
     - Accept `activeTeamId` and `onTeamChange` props
     - Make team name header tappable to open TeamSelector
     - Query in-progress games: `WHERE team_id = ? AND finished = 0`
@@ -70,8 +70,8 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - For N teams with M games each, querying by team_id returns only that team's games
     - **Validates: Requirements 2.4, 4.3, 4.4**
 
-- [ ] 5. Update RosterScreen for team scoping, renaming, and deletion
-  - [ ] 5.1 Modify `RosterScreen.jsx` to scope to active team
+- [x] 5. Update RosterScreen for team scoping, renaming, and deletion
+  - [x] 5.1 Modify `RosterScreen.jsx` to scope to active team
     - Accept `activeTeamId` prop
     - Query team name: `SELECT name FROM team WHERE id = ?` parameterized by `activeTeamId`
     - Query players: `SELECT * FROM players WHERE team_id = ? ORDER BY id`
@@ -79,7 +79,7 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - Save team name: `UPDATE team SET name = ? WHERE id = ?`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 5.1_
 
-  - [ ] 5.2 Add team deletion UI to `RosterScreen.jsx`
+  - [x] 5.2 Add team deletion UI to `RosterScreen.jsx`
     - Add a "Delete Team" button, disabled when only one team exists
     - Show confirmation dialog before deletion
     - Call `deleteTeam(db, activeTeamId)` on confirm
@@ -108,18 +108,18 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - Updating a team name and querying back returns the new name
     - **Validates: Requirements 5.1, 5.2**
 
-- [ ] 6. Checkpoint — Ensure roster and home screen work with multi-team
+- [x] 6. Checkpoint — Ensure roster and home screen work with multi-team
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Update NewGameScreen and HistoryScreen for team scoping
-  - [ ] 7.1 Modify `NewGameScreen.jsx` to scope to active team
+- [x] 7. Update NewGameScreen and HistoryScreen for team scoping
+  - [x] 7.1 Modify `NewGameScreen.jsx` to scope to active team
     - Accept `activeTeamId` prop
     - Query players: `WHERE active = 1 AND team_id = ?`
     - Insert game with `team_id`: `INSERT INTO games (opponent, date, finished, total_secs, team_id) VALUES (?, ?, 0, 0, ?)`
     - Display team name from active team query
     - _Requirements: 4.1, 4.2, 7.2_
 
-  - [ ] 7.2 Modify `HistoryScreen.jsx` to scope to active team
+  - [x] 7.2 Modify `HistoryScreen.jsx` to scope to active team
     - Accept `activeTeamId` prop
     - Query games: `WHERE team_id = ? ORDER BY id DESC`
     - _Requirements: 4.4_
@@ -139,15 +139,15 @@ Add multi-team support to SubTracker so a coach can maintain separate rosters an
     - When the active team is deleted, the new active team references an existing team
     - **Validates: Requirements 6.3**
 
-- [ ] 8. Update Playwright E2E test helpers for multi-team support
-  - [ ] 8.1 Update `tests/helpers.js` with team-aware helper functions
+- [x] 8. Update Playwright E2E test helpers for multi-team support
+  - [x] 8.1 Update `tests/helpers.js` with team-aware helper functions
     - Add `givenTeamCreated(page, teamName)` helper
     - Add `givenTeamSelected(page, teamName)` helper
     - Update `givenRosterCreated` to work with the active team context
     - Ensure existing tests still pass with the default "My Team" team
     - _Requirements: 1.1, 1.2, 2.2, 2.3_
 
-- [ ] 9. Final checkpoint — Ensure all tests pass
+- [x] 9. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

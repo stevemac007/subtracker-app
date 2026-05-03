@@ -1,26 +1,32 @@
-import { useState, useEffect, useRef } from "react";
-import { dbAll, dbGet, dbRun } from "../db.js";
+import { useState, useMemo, useRef } from "react";
+import { dbAll, dbGet, dbRun, deleteTeam, getTeams, createTeam } from "../db.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 
-export default function RosterScreen({ db, onBack }) {
-    const [teamName, setTeamName] = useState("");
-    const [players, setPlayers] = useState([]);
+// App.jsx renders this with key={activeTeamId} so it remounts on team switch
+export default function RosterScreen({ db, onBack, activeTeamId, onTeamChange }) {
+    const initialName = useMemo(() => {
+        if (!activeTeamId) return "My Team";
+        return dbGet(db, "SELECT name FROM team WHERE id = ?", [activeTeamId])?.name ?? "My Team";
+    }, [db, activeTeamId]);
+
+    const initialPlayers = useMemo(() => {
+        if (!activeTeamId) return [];
+        return dbAll(db, "SELECT * FROM players WHERE team_id = ? ORDER BY id", [activeTeamId]);
+    }, [db, activeTeamId]);
+
+    const initialTeamCount = useMemo(() => getTeams(db).length, [db]);
+
+    const [teamName, setTeamName] = useState(initialName);
+    const [players, setPlayers] = useState(initialPlayers);
     const [newName, setNewName] = useState("");
     const [newNum, setNewNum] = useState("");
     const [saved, setSaved] = useState(false);
+    const teamCount = initialTeamCount;
 
-    const teamNameRef = useRef("");
-
-    useEffect(() => {
-        const t = dbGet(db, "SELECT name FROM team WHERE id=1");
-        const name = t?.name ?? "My Team";
-        setTeamName(name);
-        teamNameRef.current = name;
-        setPlayers(dbAll(db, "SELECT * FROM players ORDER BY id"));
-    }, [db]);
+    const teamNameRef = useRef(initialName);
 
     const saveAll = () => {
-        dbRun(db, "UPDATE team SET name=? WHERE id=1", [teamNameRef.current]);
+        dbRun(db, "UPDATE team SET name = ? WHERE id = ?", [teamNameRef.current, activeTeamId]);
         setSaved(true);
         setTimeout(() => setSaved(false), 1500);
     };
@@ -34,8 +40,8 @@ export default function RosterScreen({ db, onBack }) {
 
     const addPlayer = () => {
         if (!newName.trim()) return;
-        dbRun(db, "INSERT INTO players (name,number,active) VALUES (?,?,1)", [newName.trim(), newNum.trim()]);
-        setPlayers(dbAll(db, "SELECT * FROM players ORDER BY id"));
+        dbRun(db, "INSERT INTO players (name, number, active, team_id) VALUES (?, ?, 1, ?)", [newName.trim(), newNum.trim(), activeTeamId]);
+        setPlayers(dbAll(db, "SELECT * FROM players WHERE team_id = ? ORDER BY id", [activeTeamId]));
         setNewName(""); setNewNum("");
     };
 
@@ -56,6 +62,19 @@ export default function RosterScreen({ db, onBack }) {
         setPlayers(ps => ps.filter(p => p.id !== id));
     };
 
+    const handleDeleteTeam = () => {
+        if (!confirm("Delete this team? All players and game history for this team will be permanently removed.")) return;
+        deleteTeam(db, activeTeamId);
+        let remaining = getTeams(db);
+        let newActiveId;
+        if (remaining.length === 0) {
+            newActiveId = createTeam(db, "My Team");
+        } else {
+            newActiveId = remaining[0].id;
+        }
+        onTeamChange(newActiveId);
+    };
+
     const canAdd = newName.trim().length > 0;
 
     return (
@@ -70,7 +89,7 @@ export default function RosterScreen({ db, onBack }) {
                         background: saved ? "var(--green)" : "var(--amber)",
                         color: "#1a0e00", border: "none", borderRadius: 5, cursor: "pointer",
                         fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px", fontSize: 13,
-                        padding: "5px 14px", transition: "all .2s", fontWeight: 700, minWidth: 60,
+                        padding: "10px 14px", transition: "all .2s", fontWeight: 700, minWidth: 60,
                     }}
                 >
                     {saved ? "✓ SAVED" : "SAVE"}
@@ -124,10 +143,28 @@ export default function RosterScreen({ db, onBack }) {
                                 border: "1px solid " + (canAdd ? "var(--amber)" : "var(--panel-border)"),
                                 borderRadius: 5, cursor: canAdd ? "pointer" : "default",
                                 fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px", fontSize: 13,
-                                padding: "7px 14px", transition: "all .15s", fontWeight: 700,
+                                padding: "10px 14px", transition: "all .15s", fontWeight: 700,
                             }}
                         >ADD</button>
                     </div>
+                </div>
+
+                <div style={{ marginTop: 24, borderTop: "1px solid var(--panel-border)", paddingTop: 16 }}>
+                    <button
+                        className="btn-danger"
+                        onClick={handleDeleteTeam}
+                        disabled={teamCount <= 1}
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            fontSize: 14,
+                            letterSpacing: "2px",
+                            opacity: teamCount <= 1 ? 0.35 : 1,
+                            cursor: teamCount <= 1 ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        DELETE TEAM
+                    </button>
                 </div>
             </div>
         </div>

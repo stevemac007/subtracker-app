@@ -6,6 +6,13 @@ import FitName from "../FitName.jsx";
 
 export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const gameRow = dbGet(db, "SELECT * FROM games WHERE id=?", [gameId]);
+    const periodType = gameRow?.period_type ?? "quarters";
+    const clockDirection = gameRow?.clock_direction ?? "up";
+    const periodDurationSec = gameRow?.period_duration_sec ?? 0;
+
+    const periodLabels = periodType === "halves"
+        ? ["H1", "H2", "OT"]
+        : ["Q1", "Q2", "Q3", "Q4", "OT"];
 
     const [quarter, setQuarter] = useState(1);
     const [players, setPlayers] = useState(initialPlayers);
@@ -20,6 +27,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const runningRef = useRef(false);
     const gameAccMs = useRef((gameRow?.total_secs ?? 0) * 1000);
     const totalRunMs = useRef((gameRow?.total_secs ?? 0) * 1000);
+    const periodAccMs = useRef(0);
     const clockStartWall = useRef(null);
     const stintStart = useRef({});
     const bankedMs = useRef({});
@@ -83,6 +91,12 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const liveTotalMs = runningRef.current
         ? totalRunMs.current + (now - clockStartWall.current)
         : totalRunMs.current;
+    const displayPeriodMs = runningRef.current
+        ? periodAccMs.current + (now - clockStartWall.current)
+        : periodAccMs.current;
+    const displayClockMs = clockDirection === "down"
+        ? Math.max(0, periodDurationSec * 1000 - displayPeriodMs)
+        : displayGameMs;
 
     const liveCourtMs = (pid) => {
         const b = bankedMs.current[pid] ?? 0;
@@ -132,6 +146,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const elapsed = w - clockStartWall.current;
         gameAccMs.current += elapsed;
         totalRunMs.current += elapsed;
+        periodAccMs.current += elapsed;
         clockStartWall.current = null;
         runningRef.current = false;
         setPlayers(ps => {
@@ -153,9 +168,12 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
     const changeQuarter = (newQ) => {
         pauseClock();
+        periodAccMs.current = 0;
         setQuarter(newQ);
         const gameSec = Math.floor(gameAccMs.current / 1000);
-        const label = newQ === 5 ? 'OT' : `Q${newQ}`;
+        const label = periodType === "halves"
+            ? (newQ === 3 ? "OT" : `H${newQ}`)
+            : (newQ === 5 ? "OT" : `Q${newQ}`);
         db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
             [gameId, 'quarter_change', gameSec, newQ, label]);
         saveDb(db);
@@ -163,7 +181,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     };
 
     const toggleClock = () => runningRef.current ? pauseClock() : startClock();
-    const zeroClock = () => { pauseClock(); gameAccMs.current = 0; };
+    const zeroClock = () => { pauseClock(); gameAccMs.current = 0; periodAccMs.current = 0; };
 
     const tapPlayer = (pid) => {
         const p = players.find(x => x.id === pid);
@@ -253,19 +271,19 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             <GlobalStyles />
             <div className="app">
                 <div className="hdr">
-                    <span className="hdr-title" style={{ fontSize: 15 }}>vs {opponent}</span>
+                    <span className="hdr-title" style={{ fontSize: 16 }}>vs {opponent}</span>
                     <div className="hdr-acts">
-                        <button className="hbtn" onClick={() => setShowLog(true)}>LOG</button>
-                        <button className="hbtn" onClick={() => setShowStats(true)}>STATS</button>
-                        <button className="hbtn" onClick={endGame}>END</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowLog(true)}>LOG</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowStats(true)}>STATS</button>
+                        <button className="hbtn hbtn-lg" onClick={endGame}>END</button>
                     </div>
                 </div>
 
                 <div className="clock-bar">
-                    <div className={`clock-disp ${isRunning ? "" : "paused"}`}>{fmt(displayGameMs / 1000)}</div>
+                    <div className={`clock-disp ${isRunning ? "" : "paused"}`}>{fmt(displayClockMs / 1000)}</div>
                     <div className="clock-mid">
                         <div className="qbtns">
-                            {["Q1", "Q2", "Q3", "Q4", "OT"].map((q, i) => (
+                            {periodLabels.map((q, i) => (
                                 <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
                                     onClick={() => changeQuarter(i + 1)}>{q}</button>
                             ))}
@@ -275,11 +293,11 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                                 <button className="cbtn cbtn-play" onClick={toggleClock}>{isRunning ? "⏸ PAUSE" : "▶ START"}</button>
                                 <button className="cbtn cbtn-zero" onClick={zeroClock}>ZERO</button>
                             </div>
-                            <span className="period-pill">{["Q1", "Q2", "Q3", "Q4", "OT"][quarter - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
+                            <span className="period-pill">{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
                         </div>
                     </div>
                     <button className={`hbtn${sortMode === "stint" ? " active" : ""}`}
-                        style={{ writingMode: "vertical-lr", padding: "8px 4px", fontSize: 10, letterSpacing: 2, lineHeight: 1 }}
+                        style={{ writingMode: "vertical-lr", padding: "14px 14px", fontSize: 14, letterSpacing: 2, lineHeight: 1 }}
                         onClick={() => setSortMode(s => s === "game" ? "stint" : "game")}>
                         {sortMode === "game" ? "GAME" : "STINT"}
                     </button>
@@ -298,11 +316,11 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                                     <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}`} onClick={() => tapPlayer(p.id)}>
                                         <div className="pnum">#{p.number}</div>
                                         <div className="pinfo">
-                                            <div className="ptime">{fmtMs(liveCourtMs(p.id))}</div>
-                                            <div className="pstint" style={{ color: "var(--green)" }}>▲ {fmtMs(liveStintMs(p.id))}</div>
                                             <FitName>{p.name}</FitName>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
+                                            <span className="pstint" style={{ color: "var(--green)" }}>▲ {fmtMs(liveStintMs(p.id))}</span>
+                                            {sel && <span className="pbadge b-out">OUT ▼</span>}
                                         </div>
-                                        <span className={`pbadge ${sel ? "b-out" : "b-on"}`}>{sel ? "OUT ▼" : "ON"}</span>
                                     </div>
                                 );
                             })}
@@ -320,11 +338,11 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                                     <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}`} onClick={() => tapPlayer(p.id)}>
                                         <div className="pnum">#{p.number}</div>
                                         <div className="pinfo">
-                                            <div className="ptime">{fmtMs(liveCourtMs(p.id))}</div>
-                                            <div className="pstint" style={{ color: "var(--blue)" }}>▼ {fmtMs(liveStintMs(p.id))}</div>
                                             <FitName>{p.name}</FitName>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
+                                            <span className="pstint" style={{ color: "var(--blue)" }}>▼ {fmtMs(liveStintMs(p.id))}</span>
+                                            {sel && <span className="pbadge b-in">IN ▲</span>}
                                         </div>
-                                        <span className={`pbadge ${sel ? "b-in" : "b-bnch"}`}>{sel ? "IN ▲" : "BENCH"}</span>
                                     </div>
                                 );
                             })}
@@ -386,7 +404,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         {eventLog.length === 0 && <div className="empty">No events yet</div>}
                         {eventLog.map(e => (
                             <div key={e.ts} className="log-entry">
-                                <span className="log-t">{e.quarter === 5 ? "OT" : `Q${e.quarter}`} {e.time}</span>
+                                <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
                                 {e.type === 'sub' && <>
                                     <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
                                     <span style={{ color: "var(--text-dim)" }}>→</span>

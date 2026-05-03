@@ -1,0 +1,22 @@
+- generic [ref=e16]:
+  - generic [ref=e17]:
+    - button "← BACK" [ref=e18] [cursor=pointer]
+    - generic [ref=e19]: ROSTER
+    - button "SAVE" [ref=e20] [cursor=pointer]
+  - generic [ref=e21]:
+    - generic [ref=e22]: TEAM NAME
+    - textbox "Team name…" [ref=e23]: My Team
+    - generic [ref=e24]:
+      - text: PLAYERS
+      - generic [ref=e25]: 1 active
+    - generic [ref=e32]:
+      - textbox "#" [ref=e33]
+      - textbox "Name" [ref=e34]: Alice
+      - button "ACTIVE" [ref=e35] [cursor=pointer]
+      - button "✕" [ref=e36] [cursor=pointer]
+    - generic [ref=e26]:
+      - generic [ref=e27]: ADD PLAYER
+      - generic [ref=e28]:
+        - textbox "#" [ref=e29]
+        - textbox "Player name…" [ref=e30]
+        - button "ADD" [disabled] [ref=e31]

@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { dbAll, dbGet, dbRun, saveDb } from "../db.js";
+import { dbAll, dbGet, saveDb } from "../db.js";
 import { today } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 
-export default function NewGameScreen({ db, onStart, onBack }) {
-    const teamName = dbGet(db, "SELECT name FROM team WHERE id=1")?.name ?? "My Team";
-    const allPlayers = dbAll(db, "SELECT * FROM players WHERE active=1 ORDER BY id");
+export default function NewGameScreen({ db, onStart, onBack, activeTeamId }) {
+    const teamName = dbGet(db, "SELECT name FROM team WHERE id = ?", [activeTeamId])?.name ?? "My Team";
+    const allPlayers = dbAll(db, "SELECT * FROM players WHERE active = 1 AND team_id = ? ORDER BY id", [activeTeamId]);
 
     const [opponent, setOpponent] = useState("Opponent");
+    const [periodType, setPeriodType] = useState("quarters");
+    const [clockDirection, setClockDirection] = useState("up");
+    const [periodMinutes, setPeriodMinutes] = useState(10);
     const [active, setActive] = useState(new Set(allPlayers.slice(0, 12).map(p => p.id)));
     const [starters, setStarters] = useState(new Set(allPlayers.slice(0, 5).map(p => p.id)));
 
@@ -40,8 +43,10 @@ export default function NewGameScreen({ db, onStart, onBack }) {
 
     const handleStart = () => {
         if (!canStart) return;
+        const durationSec = clockDirection === "down" ? periodMinutes * 60 : 0;
         const gameId = (() => {
-            db.run("INSERT INTO games (opponent,date,finished,total_secs) VALUES (?,?,0,0)", [opponent.trim() || "Opponent", today()]);
+            db.run("INSERT INTO games (opponent, date, finished, total_secs, team_id, period_type, clock_direction, period_duration_sec) VALUES (?, ?, 0, 0, ?, ?, ?, ?)",
+                [opponent.trim() || "Opponent", today(), activeTeamId, periodType, clockDirection, durationSec]);
             return dbGet(db, "SELECT last_insert_rowid() as id").id;
         })();
         saveDb(db);
@@ -68,6 +73,35 @@ export default function NewGameScreen({ db, onStart, onBack }) {
                     <input className="inp inp-full" value={opponent} placeholder="Opponent name…"
                         onChange={e => setOpponent(e.target.value)} />
                 </div>
+
+                <div className="sec-hd">GAME FORMAT</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                    <button className={`tog ${periodType === "quarters" ? "on" : ""}`} style={{ flex: 1 }}
+                        onClick={() => { setPeriodType("quarters"); setPeriodMinutes(10); }}>QUARTERS</button>
+                    <button className={`tog ${periodType === "halves" ? "on" : ""}`} style={{ flex: 1 }}
+                        onClick={() => { setPeriodType("halves"); setPeriodMinutes(17); }}>HALVES</button>
+                </div>
+
+                <div className="sec-hd">CLOCK DIRECTION</div>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                    <button className={`tog ${clockDirection === "up" ? "on" : ""}`} style={{ flex: 1 }}
+                        onClick={() => setClockDirection("up")}>COUNT UP</button>
+                    <button className={`tog ${clockDirection === "down" ? "on" : ""}`} style={{ flex: 1 }}
+                        onClick={() => setClockDirection("down")}>COUNT DOWN</button>
+                </div>
+
+                {clockDirection === "down" && (
+                    <>
+                        <div className="sec-hd">PERIOD DURATION (MINUTES)</div>
+                        <div className="field-row" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+                            <button className="tog on" style={{ width: 40, fontSize: 18 }}
+                                onClick={() => setPeriodMinutes(m => Math.max(1, m - 1))}>−</button>
+                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 22, color: "var(--amber)", minWidth: 40, textAlign: "center" }}>{periodMinutes}</span>
+                            <button className="tog on" style={{ width: 40, fontSize: 18 }}
+                                onClick={() => setPeriodMinutes(m => Math.min(30, m + 1))}>+</button>
+                        </div>
+                    </>
+                )}
 
                 <div className="sec-hd">
                     SQUAD SELECTION

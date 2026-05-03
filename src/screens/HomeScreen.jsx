@@ -1,13 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { dbAll, dbGet } from "../db.js";
 import { fmt, dateLabel } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 import ThemeChooser from "../ThemeChooser.jsx";
+import TeamSelector from "../TeamSelector.jsx";
 
-export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume }) {
-    const teamName = dbGet(db, "SELECT name FROM team WHERE id=1")?.name ?? "My Team";
-    const inProgress = dbAll(db, "SELECT * FROM games WHERE finished=0 ORDER BY id DESC");
-    const recentDone = dbAll(db, "SELECT * FROM games WHERE finished=1 ORDER BY id DESC LIMIT 5");
+export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume, activeTeamId, onTeamChange }) {
+    const [showTeamSelector, setShowTeamSelector] = useState(false);
+
+    const teamName = useMemo(() => {
+        if (!activeTeamId) return "My Team";
+        return dbGet(db, "SELECT name FROM team WHERE id = ?", [activeTeamId])?.name ?? "My Team";
+    }, [db, activeTeamId]);
+
+    const inProgress = useMemo(() => {
+        if (!activeTeamId) return [];
+        return dbAll(db, "SELECT * FROM games WHERE team_id = ? AND finished = 0 ORDER BY id DESC", [activeTeamId]);
+    }, [db, activeTeamId]);
+
+    const recentDone = useMemo(() => {
+        if (!activeTeamId) return [];
+        return dbAll(db, "SELECT * FROM games WHERE team_id = ? AND finished = 1 ORDER BY id DESC LIMIT 5", [activeTeamId]);
+    }, [db, activeTeamId]);
 
     // PWA install prompt
     const [installPrompt, setInstallPrompt] = useState(null);
@@ -49,7 +63,10 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
             <GlobalStyles />
             <div className="hdr">
                 <span className="hdr-title">SUBTRACKER</span>
-                <span className="hdr-team">{teamName}</span>
+                <span className="hdr-team" onClick={() => setShowTeamSelector(true)}
+                    style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {teamName} <span style={{ fontSize: "0.7em", opacity: 0.6 }}>▾</span>
+                </span>
                 <div className="hdr-acts">
                     <ThemeChooser />
                     <button className="hbtn" onClick={onRoster}>ROSTER</button>
@@ -134,6 +151,15 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
                     build {__BUILD_NUMBER__}
                 </div>
             </div>
+            {showTeamSelector && (
+                <TeamSelector
+                    db={db}
+                    activeTeamId={activeTeamId}
+                    onSelect={(id) => { onTeamChange(id); setShowTeamSelector(false); }}
+                    onTeamCreated={(id) => { onTeamChange(id); setShowTeamSelector(false); }}
+                    onClose={() => setShowTeamSelector(false)}
+                />
+            )}
         </div>
     );
 }
