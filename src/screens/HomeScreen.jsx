@@ -4,8 +4,10 @@ import { fmt, dateLabel } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 import ThemeChooser from "../ThemeChooser.jsx";
 import TeamSelector from "../TeamSelector.jsx";
+import { calculateFreemiumPrice } from "../billing.js";
+// useMemo already imported above; keep single import
 
-export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResume, activeTeamId, onTeamChange }) {
+export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResources, onResume, activeTeamId, onTeamChange }) {
     const [showTeamSelector, setShowTeamSelector] = useState(false);
 
     const teamName = useMemo(() => {
@@ -58,6 +60,17 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const showOpenInApp = promptChecked && !installPrompt && !isStandalone;
 
+    // Next actions: add unit tests for freemiumPrice() and UI display; plan backend gating if needed.
+    // Lightweight freemium pricing cue: first team free, AUD 0.99 per extra team
+    let countedTeams = 0;
+    try {
+        const teams = db ? dbAll(db, "SELECT * FROM team ORDER BY id") : [];
+        countedTeams = Array.isArray(teams) ? teams.length : 0;
+    } catch (_) {
+        countedTeams = 0;
+    }
+    const freemiumPrice = calculateFreemiumPrice(countedTeams);
+    
     return (
         <div className="app">
             <GlobalStyles />
@@ -69,8 +82,26 @@ export default function HomeScreen({ db, onNewGame, onHistory, onRoster, onResum
                 </span>
                 <div className="hdr-acts">
                     <ThemeChooser />
+                    <button className="hbtn" onClick={onResources}>RESOURCES</button>
                     <button className="hbtn" onClick={onRoster}>ROSTER</button>
                     <button className="hbtn" onClick={onHistory}>HISTORY</button>
+                </div>
+            </div>
+            <div style={{ padding: "0 16px" }}>
+                <div className="freemium-bar" style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 12px",
+                    margin: "8px 0 0 0",
+                    background: "rgba(255, 215, 0, 0.08)",
+                    border: "1px solid rgba(245, 196, 0, 0.25)",
+                    borderRadius: 6
+                }}>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 12, letterSpacing: 2 }}>FREEMIUM</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: "var(--text-dim)" }}>
+                        1 free team; {`AUD 0.99`} per additional team. Current price: {`AUD ${freemiumPrice.toFixed(2)}`}
+                    </span>
                 </div>
             </div>
             <div className="scroll-area">

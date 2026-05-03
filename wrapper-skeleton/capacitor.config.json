@@ -1,0 +1,6 @@
+{
+  "appId": "tv.subtracker.wrapper",
+  "appName": "SubTrackerWrapper",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

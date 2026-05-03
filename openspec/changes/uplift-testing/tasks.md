@@ -1,4 +1,6 @@
 - Create uplift-testing scaffolding (helpers, test harness).
 - Add a smoke test that covers a minimal game start-to-end path.
 - Integrate with current test runner configuration (if needed).
+- Add a second uplift scenario exercising substitution/use-case paths.
 - Run tests; fix issues; ensure deterministic results.
+- Document how to run uplift tests locally and in CI (in plan.md notes).

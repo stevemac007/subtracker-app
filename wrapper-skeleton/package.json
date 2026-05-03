@@ -1,0 +1,16 @@
+{
+  "name": "subtracker-wrapper-capacitor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install": "npm ci --silent",
+    "build": "echo 'Building SPA into www/ (replace with real build)';",
+    "capacitor:init": "npx cap init SubTrackerWrapper tv.subtracker.wrapper --web-dir=www",
+    "capacitor:add-ios": "npx cap add ios",
+    "capacitor:add-android": "npx cap add android",
+    "caps-prepare": "npx cap sync"
+  },
+  "devDependencies": {
+    "@capacitor/core": "^5.0.0"
+  }
+}

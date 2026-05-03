@@ -2,6 +2,10 @@ import { useState, useMemo } from "react";
 import { dbAll, dbRun } from "../db.js";
 import { fmt, fmtMs, dateLabel } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
+import AdSenseBanner from "../components/AdSenseBanner.jsx";
+// PAPERCLIP: Integrate AdSense banner in History screen footer. Render a responsive
+// banner after the main content in both list and detail views. Next step: QA to verify
+// ad rendering and layout on desktop/mobile.
 
 export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
     const initialGames = useMemo(() => dbAll(db, "SELECT * FROM games WHERE team_id = ? ORDER BY id DESC", [activeTeamId]), [db, activeTeamId]);
@@ -50,6 +54,9 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
         setGames(gs => gs.filter(g => g.id !== id));
         if (selected?.id === id) setSelected(null);
     };
+
+    // Track if there are any active (unfinished) games in the history list
+    const hasActive = useMemo(() => games.some(g => !g.finished), [games]);
 
     if (selected) return (
         <div className="app">
@@ -101,6 +108,7 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
                 ))}
                 {selected.notes ? <div style={{ marginTop: 16, padding: 10, background: "rgba(255,255,255,.03)", borderRadius: 6, fontSize: 12, color: "var(--text-dim)" }}>{selected.notes}</div> : null}
             </div>
+            {selected.finished && <AdSenseBanner />}
         </div>
     );
 
@@ -127,6 +135,7 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
                     </div>
                 ))}
             </div>
+            {!hasActive && <AdSenseBanner />}
         </div>
     );
 }
