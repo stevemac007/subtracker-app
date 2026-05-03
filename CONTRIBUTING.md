@@ -21,3 +21,6 @@ How to run locally
 
 Notes
 - This project uses a GitHub Flow with PR-based integration. Ensure CI passes before merging.
+- This project uses a GitHubFlow with PR-based integration. Ensure CI passes before merging.
+- Branch protection for main is recommended. See docs/branch-protection.md for details.
+- If you want to enable branch protections via API, see the automation notes in docs/branch-protection.md.
