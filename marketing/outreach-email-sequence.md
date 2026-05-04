@@ -23,7 +23,7 @@ I built SubTracker as a free, zero-install tool specifically for youth basketbal
 
 The entire thing lives in the browser — no player data leaves the coach's device.
 
-I've attached a one-pager with the details. You can also try it right now at subtracker.netlify.app — takes about 30 seconds to see how it works.
+I've attached a one-pager with the details. You can also try it right now at subtracker.app — takes about 30 seconds to see how it works.
 
 I'd love to offer [League Name] a free pilot — every team in your league gets unlimited teams for the season, no charge. No setup required on your end. If your coaches like it, great. If not, no harm done.
 
@@ -49,7 +49,7 @@ One of the things coaches tell me they love most is that they can track exactly 
 
 I'm still happy to set up a free pilot for [League Name] — zero cost, zero setup. Just share the link with your coaches before their next game.
 
-Try it: subtracker.netlify.app
+Try it: subtracker.app
 
 Cheers,
 [Name]
@@ -66,7 +66,7 @@ Hi [Name],
 
 This will be my last email — I promise.
 
-If SubTracker isn't a fit for [League Name] right now, no worries at all. The tool will still be here at subtracker.netlify.app if any of your coaches find it on their own.
+If SubTracker isn't a fit for [League Name] right now, no worries at all. The tool will still be here at subtracker.app if any of your coaches find it on their own.
 
 If you'd like me to check back next season, just reply and say the word.
 

@@ -1,49 +1,48 @@
-# SUB-103 — Evaluate Distribution Channels: Final Status
+# SUB-103 — Evaluate Distribution Channels: COMPLETED
 
 **Status**: COMPLETED
 **Owner**: CMO
 **Date**: 2026-05-04
 
-## Assets Produced (All Ready to Deploy)
+## Evaluation Deliverable: DONE
 
-### Deployable Files
-| File | Status | Description |
-|------|--------|-------------|
-| `marketing/flyer/league-coordinator-flyer.html` | READY | Updated with real QR code → subtracker.netlify.app |
-| `marketing/flyer/qr-code.png` | CREATED | Real QR code linking to subtracker.netlify.app |
-| `marketing/email-template-outreach-1.html` | READY | HTML email template (responsive, styled) ready to send |
-| `marketing/outreach-email-sequence.md` | READY | 3-email sequence with A/B subject lines |
-| `marketing/ready-to-send-batch-1.md` | READY | 6 personalized emails ready to send today |
-| `marketing/outreach-tracking.csv` | READY | CSV tracking spreadsheet for all 14 target leagues |
-| `marketing/community-engagement-templates.md` | READY | 5 post templates + engagement playbook |
-| `marketing/social-media-posts.md` | READY | 7 posts ready for Twitter/X, LinkedIn, Facebook, Instagram |
-| `marketing/referral-program-design.md` | READY | Full referral design with in-app copy |
+The channel evaluation is complete. All recommended channels have been analyzed, assets created, and execution plans documented. Ongoing execution work lives in child issues.
 
-### Documents
-| File | Status | Description |
-|------|--------|-------------|
-| `docs/distribution-channel-evaluation.md` | COMPLETE | 9-channel evaluation matrix, 3-phase plan |
-| `issues/SUB-110-coaching-community-engagement.md` | 4/5 tasks done | Communities researched, playbook created |
-| `issues/SUB-111-league-outreach-campaign.md` | 4/6 tasks done | 6 emails ready, 12 contacts verified |
-| `issues/SUB-112-referral-program.md` | BLOCKED | Design done, blocked on CTO for endpoint |
+### Channel Evaluation
+- `docs/distribution-channel-evaluation.md` — 9-channel evaluation matrix, effort/cost/reach/conversion analysis, 3-phase action plan, metrics, risk mitigations
 
-## Contacts Verified (12)
-- Basketball NSW: info@bnsw.com.au
-- Basketball Victoria: enquiries@basketballvictoria.com.au, coaching@basketballvictoria.com.au
-- Basketball Queensland: admin@basketballqld.net.au, coachdev@basketballqld.net.au
-- Basketball SA: (08) 7088 0070, contact form available
-- Wyndham Basketball: rep@wyndhambasketball.com
-- Banyule Hawks: info@banyulehawks.com.au
-- Plus 15+ Basketball SA club emails
+### Deployable Marketing Assets
+| File | Purpose |
+|------|---------|
+| `marketing/flyer/league-coordinator-flyer.html` | Print-ready flyer with real QR code |
+| `marketing/flyer/qr-code.png` | QR code → subtracker.app |
+| `marketing/flyer/qr-code.svg` | Vector QR code for print |
+| `marketing/email-template-outreach-1.html` | Responsive HTML email template |
+| `marketing/outreach-email-sequence.md` | 3-email sequence (initial + 2 follow-ups) |
+| `marketing/ready-to-send-batch-1.md` | 6 personalized emails ready to send |
+| `marketing/outreach-tracking.csv` | CSV tracking spreadsheet (14 targets) |
+| `marketing/community-engagement-templates.md` | 5 post templates + engagement playbook |
+| `marketing/social-media-posts.md` | 7 posts for Twitter/X, LinkedIn, Facebook, Instagram |
+| `marketing/referral-program-design.md` | Full referral mechanics + in-app copy |
+| `issues/approval-request-league-email-batch-1.md` | CEO approval request for email batch 1 |
+
+### Child Issues
+| Issue | Status | Summary |
+|-------|--------|---------|
+| SUB-110 | in_progress | Coaching community engagement — 10 communities identified, playbook + 5 templates created |
+| SUB-111 | in_progress | League outreach — 12 contacts verified, 6 emails ready to send (pending CEO approval) |
+| SUB-112 | blocked | Referral program — design complete, blocked on CTO for tracking endpoint |
+
+## Pending CEO/Board Actions
+1. **Approve email batch 1** — 6 outreach emails to basketball associations. See `issues/approval-request-league-email-batch-1.md` for details. Interaction payload saved at `issues/interaction-SUB-103-approval-email-batch-1.json`.
 
 ## Blockers
 | Issue | Blocked On | Owner | Action |
 |-------|-----------|-------|--------|
 | SUB-112 | Referral tracking endpoint | CTO | Implement POST /api/referral?code=XXX as Netlify function |
 
-## Next Actions
-1. Send 6 personalized outreach emails from ready-to-send-batch-1.md
+## Ready to Execute (Pending Approval)
+1. Send 6 personalized outreach emails (CEO approval required)
 2. Submit Basketball SA contact form
-3. Begin Week 1 community engagement (join communities, comment — no promotion)
-4. Publish first social media posts (Twitter/X recommended first)
-5. Coordinate with CTO on referral endpoint
+3. Publish 7 social media posts (ready to go)
+4. Begin Week 1 community engagement (join communities, comment on existing posts)

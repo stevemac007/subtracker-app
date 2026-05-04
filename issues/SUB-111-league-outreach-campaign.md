@@ -23,7 +23,7 @@ tasks:
   notes: "3-email sequence created in marketing/outreach-email-sequence.md with A/B subject lines and tracking spreadsheet."
 - task: Customize flyer with any league-specific details if needed
   status: completed
-  notes: "Flyer updated with real QR code pointing to subtracker.netlify.app (replaced placeholder SVG)."
+  notes: "Flyer updated with real QR code pointing to subtracker.app (replaced placeholder SVG)."
 - task: Send first batch of 10 outreach emails
   status: in_progress
   notes: "6 emails ready to send (BNSW, BV x2, BQ, Wyndham, Banyule). HTML email template created. Personalized send list in marketing/ready-to-send-batch-1.md. Tracking CSV created."

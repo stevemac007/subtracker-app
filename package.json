@@ -11,7 +11,8 @@
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "start:backend": "node backend/server.js",
-    "test:backend": "node backend/test/run_tests.mjs"
+    "test:backend": "node backend/test/run_tests.mjs",
+    "test:dbjs": "node tests/dbjs_unit_tests_skeleton.js"
   },
   "dependencies": {
     "express": "^4.18.2",

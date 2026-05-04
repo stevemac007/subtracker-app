@@ -4,4 +4,4 @@ Allow: /
 User-agent: Mediapartners-Google
 Allow: /
 
-Sitemap: https://subtime-app.netlify.app/sitemap.xml
+Sitemap: https://subtracker.app/sitemap.xml

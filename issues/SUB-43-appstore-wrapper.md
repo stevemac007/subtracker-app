@@ -10,6 +10,7 @@ owners:
 dependencies:
 - SubTracker core SPA stability (existing)
 - Design doc: openspec/changes/appstore-wrapping/design.md
+- Related: SUB-165-capacitor-wrapper-mvp.md (executable tasks for wrapper MVP)
 
 tasks:
 - task: Scaffold Capacitor-based wrapper skeleton (iOS + Android)

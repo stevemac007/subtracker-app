@@ -13,7 +13,7 @@
 
 ### How It Works
 1. Coach finishes a game, sees prompt: "Know another coach? Share SubTracker and get a free team slot."
-2. Coach taps share — generates link: `subtracker.netlify.app/?ref=SESSION_ID`
+2. Coach taps share — generates link: `subtracker.app/?ref=SESSION_ID`
 3. New coach opens link, creates their first game — referrer is credited
 4. Referrer gets a notification (in-app toast) when a referral signs up
 5. Free team slots apply automatically to their next game
@@ -44,7 +44,7 @@ Send this link to another coach. When they create their first game, you'll both 
 [Share via Email]
 [Share via Text]
 
-Your referral link: subtracker.netlify.app/?ref=xxxxxxxx
+Your referral link: subtracker.app/?ref=xxxxxxxx
 ```
 
 ### Referral Success Toast
@@ -72,7 +72,7 @@ Share SubTracker with another coach. When they try it for the first time, you bo
 
 No accounts. No setup. Just open the link and start tracking.
 
-subtracker.netlify.app
+subtracker.app
 ```
 
 ## Email Template (for existing users)
@@ -87,7 +87,7 @@ Quick favor — if you've found SubTracker useful, can you share it with another
 
 When they create their first game, you both get a free team slot (normally $0.99 AUD). No catch, no signup, just share the link.
 
-Your personal link: subtracker.netlify.app/?ref=xxxxxxxx
+Your personal link: subtracker.app/?ref=xxxxxxxx
 
 Thanks for helping us grow. Built for the bench.
 

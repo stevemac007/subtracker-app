@@ -13,7 +13,7 @@ All while calling plays and managing parent expectations.
 
 Built a free tool that handles it:
 
-subtracker.netlify.app
+subtracker.app
 
 No install. No account. Works offline.
 ```
@@ -33,7 +33,7 @@ What if substitution tracking was as simple as:
 
 That's it. Court time tracked automatically. Full game log. No clipboard, no spreadsheet, no app download.
 
-subtracker.netlify.app
+subtracker.app
 ```
 
 ---
@@ -54,7 +54,7 @@ SubTracker:
 
 Because coaching shouldn't require giving up your privacy.
 
-Try it: subtracker.netlify.app
+Try it: subtracker.app
 ```
 
 ---
@@ -74,7 +74,7 @@ The solution:
 → Open a link → enter roster → pick 5 starters → tap players going out/in → confirm
 → Court time tracked automatically for every player
 → Full substitution log with timestamps
-→ Available at subtracker.netlify.app
+→ Available at subtracker.app
 
 We're looking for youth basketball leagues to pilot this with their coaches — free for the entire season. If you coordinate a league or know someone who does, I'd love to connect.
 
@@ -100,7 +100,7 @@ SubTracker is a free web app that:
 
 It's free for one team and $0.99 AUD for additional teams. No subscriptions, no accounts, no data collection.
 
-Built for the bench. subtracker.netlify.app
+Built for the bench. subtracker.app
 
 If you're a coach or league coordinator, I'd genuinely appreciate your feedback.
 ```
@@ -124,7 +124,7 @@ So I built a dead-simple tool to handle it:
 
 No accounts. No data collection. Works offline in the gym.
 
-It's free at subtracker.netlify.app if anyone wants to try it this season. Built it for myself but figured other coaches might find it useful.
+It's free at subtracker.app if anyone wants to try it this season. Built it for myself but figured other coaches might find it useful.
 
 What do you use to track subs and court time? I'd love to hear how others handle this.
 ```

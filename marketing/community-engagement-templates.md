@@ -32,7 +32,7 @@ So I built a dead-simple tool to handle it:
 
 No accounts. No data collection. Works offline in the gym.
 
-It's free at subtracker.netlify.app if anyone wants to try it this season. Built it for myself but figured other coaches might find it useful.
+It's free at subtracker.app if anyone wants to try it this season. Built it for myself but figured other coaches might find it useful.
 
 What do you use to track subs and court time? I'd love to hear how others handle this.
 
@@ -56,7 +56,7 @@ After a few seasons on the bench, here are the rotation habits that made the big
 
 4. **Keep a substitution log** — if a parent asks "how much did my kid play?" you should have the answer in 5 seconds.
 
-5. **Use the simplest tool possible** — I tried spreadsheets, paper, and eventually built something that runs in my phone's browser. Zero setup, just open and go. That's SubTracker if you want to check it out: subtracker.netlify.app
+5. **Use the simplest tool possible** — I tried spreadsheets, paper, and eventually built something that runs in my phone's browser. Zero setup, just open and go. That's SubTracker if you want to check it out: subtracker.app
 
 What's your go-to rotation system? Would love to compare notes.
 
@@ -96,7 +96,7 @@ I use SubTracker for this — it's free and runs right in your browser. No downl
 
 Works offline too, which is clutch since gym Wi-Fi is usually terrible.
 
-subtracker.netlify.app — takes about 30 seconds to try.
+subtracker.app — takes about 30 seconds to try.
 
 ---
 
@@ -122,7 +122,7 @@ We're currently looking for youth basketball leagues to pilot the tool with thei
 
 If you run or coordinate a youth basketball league and want to equip your coaches with a better tool, I'd love to connect: [email/contact]
 
-Try it now: subtracker.netlify.app
+Try it now: subtracker.app
 
 ---
 
