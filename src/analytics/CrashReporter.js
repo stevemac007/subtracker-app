@@ -46,3 +46,14 @@ export function initCrashReporter(options = {}) {
 }
 
 export default initCrashReporter;
+
+// Skeleton hook for tool-specific initialization. Allows moving forward with architecture
+// while deferring heavy SDK imports until a concrete plan is approved.
+export function configureCrashTool(toolName, config = {}) {
+  if (!toolName) return;
+  // Currently a no-op stub; replace with real SDK initialization when a tool is chosen.
+  // Examples:
+  // - if (toolName === 'sentry') { initializeSentry(config.dsn); }
+  // - if (toolName === 'firebase') { initializeFirebase(config); }
+  console.log(`Crash tool configuration requested: ${toolName}`, config);
+}
