@@ -32,6 +32,10 @@ app.post('/payments/charge', (req, res) => {
 
 // Crash reporting endpoint: accepts lightweight crash/telemetry payloads from the frontend
 app.post('/crash/report', (req, res) => {
+  // Gate crash reporting behind a feature flag for controlled rollout
+  if (!isFeatureEnabled('crash_reporting')) {
+    return res.status(503).json({ error: 'Crash reporting feature is disabled' });
+  }
   try {
     const payload = req.body || {};
     payload.timestamp = payload.timestamp || Date.now();
