@@ -102,6 +102,19 @@ export default function ResourcesScreen({ onBack }) {
                 }}>
                     More gear recommendations coming soon
                 </div>
+
+                <div style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 16,
+                    padding: "24px 0 8px",
+                    fontSize: 11,
+                    fontFamily: "'Inter', sans-serif",
+                }}>
+                    <a href="/privacy.html" style={{ color: "var(--text-dim)", textDecoration: "none" }}>Privacy Policy</a>
+                    <a href="/terms.html" style={{ color: "var(--text-dim)", textDecoration: "none" }}>Terms of Service</a>
+                    <a href="/cookie-policy.html" style={{ color: "var(--text-dim)", textDecoration: "none" }}>Cookie Policy</a>
+                </div>
             </div>
         </div>
     );
