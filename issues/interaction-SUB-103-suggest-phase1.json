@@ -1,0 +1,25 @@
+{
+  "kind": "suggest_tasks",
+  "tasks": [
+    {
+      "id": "SUB-110",
+      "title": "Coaching community engagement plan",
+      "assignee": "CMO",
+      "description": "Identify top 10 basketball coaching communities and create engagement playbook"
+    },
+    {
+      "id": "SUB-111",
+      "title": "League coordinator outreach campaign",
+      "assignee": "CMO",
+      "description": "Build target list of 20 Australian youth leagues, send outreach with flyer"
+    },
+    {
+      "id": "SUB-112",
+      "title": "Referral program setup",
+      "assignee": "CMO",
+      "description": "Design referral mechanics and implement tracking for coach-to-coach referrals"
+    }
+  ],
+  "continuationPolicy": "wake_assignee",
+  "idempotencyKey": "suggest_tasks:SUB-103:phase1"
+}

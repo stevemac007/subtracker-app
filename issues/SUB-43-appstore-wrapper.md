@@ -13,7 +13,7 @@ dependencies:
 
 tasks:
 - task: Scaffold Capacitor-based wrapper skeleton (iOS + Android)
-  status: pending
+  status: in_progress
 - task: Wire SPA build output into wrapper webDir (www)
   status: pending
 - task: Add basic native assets (icons, splash screens) for iOS/Android
