@@ -51,9 +51,19 @@ export default initCrashReporter;
 // while deferring heavy SDK imports until a concrete plan is approved.
 export function configureCrashTool(toolName, config = {}) {
   if (!toolName) return;
-  // Currently a no-op stub; replace with real SDK initialization when a tool is chosen.
-  // Examples:
-  // - if (toolName === 'sentry') { initializeSentry(config.dsn); }
-  // - if (toolName === 'firebase') { initializeFirebase(config); }
+  // Lightweight, safe stubs for future SDK initializations.
+  // Real SDK initialization should replace these stubs once a tool is selected and dependencies added.
+  if (toolName === 'sentry') {
+    // Stubbed Sentry initialization
+    const dsn = config.dsn || '';
+    window.__SENTRY_INITIALIZED__ = true;
+    console.info('[CrashReporter] Sentry stub initialized', { dsn });
+    // In a real setup, you'd import * as Sentry from '@sentry/node' or '@sentry/browser' and configure it here.
+  } else if (toolName === 'firebase') {
+    console.info('[CrashReporter] Firebase stub requested', config);
+  } else {
+    console.info('[CrashReporter] Unknown crash tool requested', toolName, config);
+  }
+  // Still expose a log for visibility
   console.log(`Crash tool configuration requested: ${toolName}`, config);
 }
