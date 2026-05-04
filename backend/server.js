@@ -30,6 +30,20 @@ app.post('/payments/charge', (req, res) => {
   res.json({ success: true, amount, currency: currency ?? 'USD', id: 'pay_mock_12345' });
 });
 
+// Crash reporting endpoint: accepts lightweight crash/telemetry payloads from the frontend
+app.post('/crash/report', (req, res) => {
+  try {
+    const payload = req.body || {};
+    payload.timestamp = payload.timestamp || Date.now();
+    // Log the crash payload for debugging/observability
+    // eslint-disable-next-line no-console
+    console.log('Crash report received:', payload);
+    res.json({ received: true, timestamp: payload.timestamp });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to process crash report' });
+  }
+});
+
 // License validation endpoint
 app.get('/license/validate', (req, res) => {
   if (!isFeatureEnabled('license')) {
