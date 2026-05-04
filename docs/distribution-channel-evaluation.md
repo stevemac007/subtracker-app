@@ -10,7 +10,7 @@
 | Attribute | Detail |
 |-----------|--------|
 | Product | SubTracker — basketball substitution tracker |
-| URL | subtracker.netlify.app |
+| URL | subtracker.app |
 | Model | Web app, no install, no account, works offline |
 | Pricing | Free for 1 team, AUD $0.99 per additional team, ad-supported free tier |
 | Target Users | Youth basketball coaches, assistant coaches, scorekeepers, league coordinators |
