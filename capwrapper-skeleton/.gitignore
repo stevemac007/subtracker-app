@@ -1,0 +1,16 @@
+node_modules/
+dist/
+
+# Capacitor native project outputs
+android/
+ios/
+
+# Build artefacts in www/ (populated by CI from main Vite build)
+www/*.js
+www/*.css
+www/*.map
+www/assets/
+
+# Local env
+.env
+.env.local

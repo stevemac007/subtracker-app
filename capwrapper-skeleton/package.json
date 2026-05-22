@@ -1,0 +1,22 @@
+{
+  "name": "subtracker-capacitor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor wrapper for SubTracker — iOS and Android app shell",
+  "scripts": {
+    "build": "echo 'Copy dist/ into www/ before syncing' && exit 0",
+    "sync": "npx cap sync",
+    "open:ios": "npx cap open ios",
+    "open:android": "npx cap open android",
+    "add:ios": "npx cap add ios",
+    "add:android": "npx cap add android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  }
+}
