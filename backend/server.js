@@ -1,5 +1,24 @@
 import express from 'express';
 import { isFeatureEnabled } from './flags.js';
+import { charge as gatewayCharge } from './gateway/index.js';
+
+// Sentry backend initialisation — SUB-105
+// Activated when SENTRY_DSN env var is set and crash_reporting flag is on.
+// @sentry/node must be installed (npm install @sentry/node).
+if (isFeatureEnabled('crash_reporting') && process.env.SENTRY_DSN) {
+  try {
+    const Sentry = await import('@sentry/node');
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'production',
+      release: process.env.APP_VERSION,
+      tracesSampleRate: 0.1,
+    });
+    console.log('[Sentry] Backend SDK initialised');
+  } catch {
+    console.warn('[Sentry] @sentry/node not installed — backend SDK skipped. Run: npm install @sentry/node');
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -15,19 +34,24 @@ app.get('/payments/health', (req, res) => {
 });
 
 // Simple mock-charge endpoint guarded by feature flag
-app.post('/payments/charge', (req, res) => {
+app.post('/payments/charge', async (req, res) => {
   if (!isFeatureEnabled('payments')) {
     return res.status(503).json({ error: 'Payments feature is disabled' });
   }
 
-  const { amount, currency } = req.body || {};
+  const { amount, currency, customerId } = req.body || {};
   // Minimal validation
   if (typeof amount !== 'number' || amount <= 0) {
     return res.status(400).json({ error: 'Invalid amount' });
   }
 
-  // In a real system, here we'd integrate with a payment gateway.
-  res.json({ success: true, amount, currency: currency ?? 'USD', id: 'pay_mock_12345' });
+  // In a real system, call the gateway provider
+  try {
+    const result = await gatewayCharge({ amount, currency, customerId });
+    res.json({ success: true, amount, currency: currency ?? 'USD', id: result.id, gatewayStatus: result.status, customerId });
+  } catch (err) {
+    res.status(500).json({ error: 'Payment gateway error', detail: err?.message });
+  }
 });
 
 // Crash reporting endpoint: accepts lightweight crash/telemetry payloads from the frontend
