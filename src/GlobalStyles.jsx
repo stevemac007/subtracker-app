@@ -150,7 +150,7 @@ const GlobalStyles = () => {
     .player-setup-list { display:grid; grid-template-columns:1fr; gap:4px; }
     @media (min-width: 520px) { .player-setup-list { grid-template-columns:1fr 1fr; gap:6px; } }
     @media (min-width: 800px) { .player-setup-list { grid-template-columns:1fr 1fr 1fr; gap:6px; } }
-    .player-setup-row { display:grid; grid-template-columns:32px 1fr auto auto; gap:6px; align-items:center; padding:5px 8px; background:rgba(255,255,255,.02); border-radius:6px; }
+    .player-setup-row { display:grid; grid-template-columns:52px 1fr auto auto; gap:6px; align-items:center; padding:5px 8px; background:rgba(255,255,255,.02); border-radius:6px; }
     .tog { padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer; font-family:'Bebas Neue',sans-serif; letter-spacing:1px; border:1px solid rgba(255,255,255,.18); transition:all .12s; color:var(--text); background:rgba(255,255,255,.06); white-space:nowrap; }
     .tog.on  { background:var(--green-bg); color:var(--green); border-color:var(--green-bd); }
     .tog.start-on { background:rgba(245,166,35,.12); color:var(--amber); border-color:rgba(245,166,35,.4); }
