@@ -23,7 +23,6 @@ This opens a browser window to authorize the CLI.
 ### 2. Build
 
 ```bash
-cd subtime-app
 npm install
 npm run build
 ```
@@ -56,9 +55,9 @@ Your site is now live at `https://<site-name>.netlify.app`.
 
 | Setting | Value |
 |---|---|
-| Base directory | `subtime-app` |
+| Base directory | _(leave blank — repo root)_ |
 | Build command | `npm run build` |
-| Publish directory | `subtime-app/dist` |
+| Publish directory | `dist` |
 
 4. Click "Deploy". Netlify will build and deploy on every push to your main branch.
 

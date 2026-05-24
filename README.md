@@ -1,6 +1,6 @@
 # SubTracker
 
-A basketball substitution tracker built for coaches and scorekeepers. Manage your roster, run a live game clock, and track player court time and substitutions in real time — all from your browser.
+Basketball substitution tracker for coaches. Manage your roster, run a live game clock, and track player court time and substitutions in real time — all from your browser.
 
 ## Features
 

@@ -3,6 +3,10 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './ThemeContext.jsx'
+import initCrashReporter from './analytics/CrashReporter'
+
+// Initialize crash reporting (frontend)
+initCrashReporter();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

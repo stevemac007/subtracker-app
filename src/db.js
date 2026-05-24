@@ -101,6 +101,10 @@ function applySchema(db) {
   try { db.run(`ALTER TABLE games ADD COLUMN clock_direction TEXT NOT NULL DEFAULT 'up';`); } catch (_) { /* column already exists */ }
   // eslint-disable-next-line no-unused-vars
   try { db.run(`ALTER TABLE games ADD COLUMN period_duration_sec INTEGER NOT NULL DEFAULT 0;`); } catch (_) { /* column already exists */ }
+  // eslint-disable-next-line no-unused-vars
+  try { db.run(`ALTER TABLE game_events ADD COLUMN wall_time INTEGER;`); } catch (_) { /* column already exists */ }
+  // eslint-disable-next-line no-unused-vars
+  try { db.run(`ALTER TABLE substitutions ADD COLUMN wall_time INTEGER;`); } catch (_) { /* column already exists */ }
 
   // Seed default team only if the team table is empty
   const teamCount = db.exec(`SELECT COUNT(*) as cnt FROM team;`);

@@ -20,7 +20,7 @@
 - Inter — body text
 
 ## Common Commands
-All commands run from `subtime-app/`:
+All commands run from the project root:
 
 | Command | Description |
 |---|---|

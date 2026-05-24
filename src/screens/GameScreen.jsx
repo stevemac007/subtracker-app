@@ -3,6 +3,8 @@ import { dbAll, dbGet, dbRun, saveDb } from "../db.js";
 import { fmt, fmtMs } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 import FitName from "../FitName.jsx";
+import GameConfigModal from "../components/GameConfigModal.jsx";
+import { loadGameSettings, saveGameSettings } from "../gameSettings.js";
 
 export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const gameRow = dbGet(db, "SELECT * FROM games WHERE id=?", [gameId]);
@@ -20,9 +22,12 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const [selIn, setSelIn] = useState(new Set());
     const [showStats, setShowStats] = useState(false);
     const [showLog, setShowLog] = useState(false);
-    const [sortMode, setSortMode] = useState("game");
+    const [showConfig, setShowConfig] = useState(false);
+    const [showEndConfirm, setShowEndConfirm] = useState(false);
+    const [gameSettings, setGameSettings] = useState(() => loadGameSettings());
     const [eventLog, setEventLog] = useState([]);
-
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
     // ── Wall-clock timing ──
     const runningRef = useRef(false);
     const gameAccMs = useRef((gameRow?.total_secs ?? 0) * 1000);
@@ -39,19 +44,22 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const gps = dbAll(db, "SELECT player_id, court_ms FROM game_players WHERE game_id=?", [gameId]);
         gps.forEach(gp => { bankedMs.current[gp.player_id] = gp.court_ms; });
         initialPlayers.forEach(p => { stintRoleBanked.current[p.id] = 0; stintRoleStart.current[p.id] = null; });
-        const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
+        const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, s.wall_time, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
       WHERE s.game_id=? ORDER BY s.id`, [gameId]);
-        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail, wall_time
       FROM game_events WHERE game_id=? ORDER BY id`, [gameId]);
         const merged = [
-            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
-            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's', wallTime: s.wall_time })),
+            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e', wallTime: e.wall_time })),
         ];
         merged.sort((a, b) => {
-            if (a.time !== b.time) return a.time.localeCompare(b.time);
+            if (a.wallTime && b.wallTime) return a.wallTime - b.wallTime;
+            if (a.quarter !== b.quarter) return a.quarter - b.quarter;
+            if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+            if (a.tbl !== b.tbl) return a.tbl === 'e' ? -1 : 1;
             return a.sortId - b.sortId;
         });
         setEventLog(merged.reverse().map((e, i) => ({ ...e, ts: `loaded-${i}` })));
@@ -125,20 +133,32 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             ? gameAccMs.current + (Date.now() - clockStartWall.current)
             : gameAccMs.current;
         const gameSec = Math.floor(elapsed / 1000);
-        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
-            [gameId, eventType, gameSec, quarter, detail]);
+        const wallTime = Date.now();
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, eventType, gameSec, quarter, detail, wallTime]);
         saveDb(db);
-        setEventLog(log => [{ type: eventType, time: fmt(gameSec), quarter, detail, ts: Date.now() + Math.random() }, ...log].slice(0, 100));
+        const ts = `${eventType}-${wallTime}-${Math.random()}`;
+        setEventLog(log => [{ type: eventType, time: fmt(gameSec), quarter, detail, ts, wallTime }, ...log].slice(0, 100));
     }, [db, gameId, quarter]);
 
     const startClock = useCallback(() => {
         if (runningRef.current) return;
         const w = Date.now();
+        // If starting a fresh period (not Q1 and clock is at 0), log the quarter_change
+        if (quarter > 1 && periodAccMs.current === 0 && gameAccMs.current === 0) {
+            const label = periodType === "halves"
+                ? (quarter === 3 ? "OT" : `H${quarter}`)
+                : (quarter === 5 ? "OT" : `Q${quarter}`);
+            db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+                [gameId, 'quarter_change', 0, quarter, label, w]);
+            saveDb(db);
+            setEventLog(log => [{ type: 'quarter_change', time: fmt(0), quarter, detail: label, ts: w - 1, wallTime: w }, ...log].slice(0, 100));
+        }
         clockStartWall.current = w;
         runningRef.current = true;
-        setPlayers(ps => { ps.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; }); return ps; });
+        players.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; });
         logEvent('clock_start');
-    }, [logEvent]);
+    }, [logEvent, players]);
 
     const pauseClock = useCallback(() => {
         if (!runningRef.current) return;
@@ -149,39 +169,56 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         periodAccMs.current += elapsed;
         clockStartWall.current = null;
         runningRef.current = false;
-        setPlayers(ps => {
-            ps.forEach(p => {
-                if (stintStart.current[p.id] != null) {
-                    bankedMs.current[p.id] = (bankedMs.current[p.id] ?? 0) + (w - stintStart.current[p.id]);
-                    stintStart.current[p.id] = null;
-                }
-                if (stintRoleStart.current[p.id] != null) {
-                    stintRoleBanked.current[p.id] = (stintRoleBanked.current[p.id] ?? 0) + (w - stintRoleStart.current[p.id]);
-                    stintRoleStart.current[p.id] = null;
-                }
-            });
-            return ps;
+        players.forEach(p => {
+            if (stintStart.current[p.id] != null) {
+                bankedMs.current[p.id] = (bankedMs.current[p.id] ?? 0) + (w - stintStart.current[p.id]);
+                stintStart.current[p.id] = null;
+            }
+            if (stintRoleStart.current[p.id] != null) {
+                stintRoleBanked.current[p.id] = (stintRoleBanked.current[p.id] ?? 0) + (w - stintRoleStart.current[p.id]);
+                stintRoleStart.current[p.id] = null;
+            }
         });
         persistTimes();
         logEvent('clock_pause');
-    }, [persistTimes, logEvent]);
+    }, [persistTimes, logEvent, players]);
 
     const changeQuarter = (newQ) => {
         pauseClock();
         periodAccMs.current = 0;
         setQuarter(newQ);
         const gameSec = Math.floor(gameAccMs.current / 1000);
+        const wallTime = Date.now();
         const label = periodType === "halves"
             ? (newQ === 3 ? "OT" : `H${newQ}`)
             : (newQ === 5 ? "OT" : `Q${newQ}`);
-        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
-            [gameId, 'quarter_change', gameSec, newQ, label]);
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, 'quarter_change', gameSec, newQ, label, wallTime]);
         saveDb(db);
-        setEventLog(log => [{ type: 'quarter_change', time: fmt(gameSec), quarter: newQ, detail: label, ts: Date.now() }, ...log].slice(0, 100));
+        setEventLog(log => [{ type: 'quarter_change', time: fmt(gameSec), quarter: newQ, detail: label, ts: wallTime, wallTime }, ...log].slice(0, 100));
     };
 
     const toggleClock = () => runningRef.current ? pauseClock() : startClock();
     const zeroClock = () => { pauseClock(); gameAccMs.current = 0; periodAccMs.current = 0; };
+
+    const endPeriod = () => {
+        pauseClock();
+        const gameSec = Math.floor(gameAccMs.current / 1000);
+        const wallTime = Date.now();
+        const label = periodType === "halves"
+            ? (quarter === 3 ? "OT" : `H${quarter}`)
+            : (quarter === 5 ? "OT" : `Q${quarter}`);
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, 'period_end', gameSec, quarter, label, wallTime]);
+        saveDb(db);
+        setEventLog(log => [{ type: 'period_end', time: fmt(gameSec), quarter, detail: label, ts: wallTime, wallTime }, ...log].slice(0, 100));
+        gameAccMs.current = 0;
+        periodAccMs.current = 0;
+        const maxPeriod = periodLabels.length;
+        if (quarter < maxPeriod) {
+            setQuarter(quarter + 1);
+        }
+    };
 
     const tapPlayer = (pid) => {
         const p = players.find(x => x.id === pid);
@@ -203,43 +240,56 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const gameSec = Math.floor(displayGameMs / 1000);
         const newLog = [];
 
+        // Perform timing updates on refs and DB writes BEFORE the state updater
+        pairs.forEach(({ out: oid, in: iid }) => {
+            const outP = players.find(p => p.id === oid), inP = players.find(p => p.id === iid);
+            if (!outP || !inP) return;
+
+            if (stintStart.current[oid] != null) {
+                bankedMs.current[oid] = (bankedMs.current[oid] ?? 0) + (w - stintStart.current[oid]);
+                stintStart.current[oid] = null;
+            }
+            if (runningRef.current) stintStart.current[iid] = w;
+
+            stintRoleBanked.current[oid] = 0;
+            stintRoleStart.current[oid] = runningRef.current ? w : null;
+            stintRoleBanked.current[iid] = 0;
+            stintRoleStart.current[iid] = runningRef.current ? w : null;
+
+            db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id,wall_time) VALUES (?,?,?,?,?,?)",
+                [gameId, gameSec, quarter, oid, iid, w]);
+            db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
+                [bankedMs.current[oid] ?? 0, gameId, oid]);
+            db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
+                [bankedMs.current[iid] ?? 0, gameId, iid]);
+
+            newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: w + newLog.length, wallTime: w });
+        });
+        db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
+        saveDb(db);
+
+        // Pure state update — no side effects
         setPlayers(ps => {
             const updated = [...ps];
             pairs.forEach(({ out: oid, in: iid }) => {
-                const outP = ps.find(p => p.id === oid), inP = ps.find(p => p.id === iid);
-                if (!outP || !inP) return;
-
-                if (stintStart.current[oid] != null) {
-                    bankedMs.current[oid] = (bankedMs.current[oid] ?? 0) + (w - stintStart.current[oid]);
-                    stintStart.current[oid] = null;
-                }
-                if (runningRef.current) stintStart.current[iid] = w;
-
-                stintRoleBanked.current[oid] = 0;
-                stintRoleStart.current[oid] = runningRef.current ? w : null;
-                stintRoleBanked.current[iid] = 0;
-                stintRoleStart.current[iid] = runningRef.current ? w : null;
-
                 const oi = updated.findIndex(p => p.id === oid), ii = updated.findIndex(p => p.id === iid);
                 if (oi >= 0) updated[oi] = { ...updated[oi], onCourt: false };
                 if (ii >= 0) updated[ii] = { ...updated[ii], onCourt: true };
-
-                db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id) VALUES (?,?,?,?,?)",
-                    [gameId, gameSec, quarter, oid, iid]);
-                db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
-                    [bankedMs.current[oid] ?? 0, gameId, oid]);
-                db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
-                    [bankedMs.current[iid] ?? 0, gameId, iid]);
-
-                newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
             });
-            db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
-            saveDb(db);
             return updated;
         });
 
         setEventLog(log => [...newLog, ...log].slice(0, 100));
         setSelOut(new Set()); setSelIn(new Set());
+
+        // Show toast
+        const toastMsg = pairs.map(({ out: oid, in: iid }) => {
+            const op = players.find(p => p.id === oid), ip = players.find(p => p.id === iid);
+            return `${op?.name} → ${ip?.name}`;
+        }).join("  ·  ");
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast(toastMsg);
+        toastTimer.current = setTimeout(() => setToast(null), 15000);
     };
 
     const cancelSel = () => { setSelOut(new Set()); setSelIn(new Set()); };
@@ -256,6 +306,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         onEnd();
     };
 
+    const sortMode = gameSettings.sortMode;
     const onCourt = players.filter(p => p.onCourt).sort((a, b) =>
         sortMode === "stint" ? liveStintMs(b.id) - liveStintMs(a.id) : liveCourtMs(b.id) - liveCourtMs(a.id)
     );
@@ -275,30 +326,60 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                     <div className="hdr-acts">
                         <button className="hbtn hbtn-lg" onClick={() => setShowLog(true)}>LOG</button>
                         <button className="hbtn hbtn-lg" onClick={() => setShowStats(true)}>STATS</button>
-                        <button className="hbtn hbtn-lg" onClick={endGame}>END</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowEndConfirm(true)}>END</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowConfig(true)} style={{ flex: 0.5, padding: "8px 4px" }}>⚙</button>
                     </div>
                 </div>
 
+                {toast && (
+                    <div className="sub-toast" onClick={() => setToast(null)}>
+                        <span className="sub-toast-label">SUB</span> {toast}
+                    </div>
+                )}
+
                 <div className="clock-bar">
                     <div className={`clock-disp ${isRunning ? "" : "paused"}`}>{fmt(displayClockMs / 1000)}</div>
-                    <div className="clock-mid">
-                        <div className="qbtns">
-                            {periodLabels.map((q, i) => (
-                                <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
-                                    onClick={() => changeQuarter(i + 1)}>{q}</button>
-                            ))}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div className="cbtns">
-                                <button className="cbtn cbtn-play" onClick={toggleClock}>{isRunning ? "⏸ PAUSE" : "▶ START"}</button>
-                                <button className="cbtn cbtn-zero" onClick={zeroClock}>ZERO</button>
+                    {gameSettings.simplifiedControls ? (
+                        <div className="clock-mid">
+                            <span className="period-pill" style={{ fontSize: 12, marginBottom: 4 }}>{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
+                            <div className="cbtns" style={{ width: "100%" }}>
+                                {!isRunning && (
+                                    <button className="cbtn cbtn-play" style={{ flex: 1 }} onClick={startClock}>
+                                        {periodAccMs.current > 0 ? "▶ RESUME" : "▶ START"} {periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]}
+                                    </button>
+                                )}
+                                {isRunning && (
+                                    <button className="cbtn cbtn-zero" style={{ flex: 1 }} onClick={pauseClock}>
+                                        ⏸ PAUSE
+                                    </button>
+                                )}
+                                {!isRunning && periodAccMs.current > 0 && (
+                                    <button className="cbtn cbtn-zero" style={{ flex: 1 }} onClick={endPeriod}>
+                                        ⏹ END {periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]}
+                                    </button>
+                                )}
                             </div>
-                            <span className="period-pill">{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="clock-mid">
+                            <div className="qbtns">
+                                {periodLabels.map((q, i) => (
+                                    <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
+                                        onClick={() => changeQuarter(i + 1)}>{q}</button>
+                                ))}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div className="cbtns">
+                                    <button className="cbtn cbtn-play" onClick={toggleClock}>{isRunning ? "⏸ PAUSE" : "▶ START"}</button>
+                                    <button className="cbtn cbtn-zero" onClick={zeroClock}>ZERO</button>
+                                </div>
+                                <span className="period-pill">{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
+                            </div>
+                        </div>
+                    )}
                     <button className={`hbtn${sortMode === "stint" ? " active" : ""}`}
                         style={{ writingMode: "vertical-lr", padding: "14px 14px", fontSize: 14, letterSpacing: 2, lineHeight: 1 }}
-                        onClick={() => setSortMode(s => s === "game" ? "stint" : "game")}>
+                        onClick={() => setGameSettings(s => { const n = { ...s, sortMode: s.sortMode === "game" ? "stint" : "game" }; saveGameSettings(n); return n; })}>
                         {sortMode === "game" ? "GAME" : "STINT"}
                     </button>
                 </div>
@@ -312,13 +393,16 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         <div className="pgrid">
                             {onCourt.map(p => {
                                 const sel = selOut.has(p.id);
+                                const stintMs = liveStintMs(p.id);
+                                const courtWarn = gameSettings.courtWarningMin > 0 && stintMs >= gameSettings.courtWarningMin * 60000;
+                                const pct = liveTotalMs > 0 ? Math.round(liveCourtMs(p.id) / liveTotalMs * 100) : 0;
                                 return (
-                                    <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}`} onClick={() => tapPlayer(p.id)}>
-                                        <div className="pnum">#{p.number}</div>
+                                    <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}${courtWarn ? " stint-warn" : ""}`} onClick={() => tapPlayer(p.id)}>
+                                        {gameSettings.showPlayerNumber && <div className="pnum">#{p.number}</div>}
                                         <div className="pinfo">
                                             <FitName>{p.name}</FitName>
-                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
-                                            <span className="pstint" style={{ color: "var(--green)" }}>▲ {fmtMs(liveStintMs(p.id))}</span>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}{gameSettings.showGamePct && <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: 4 }}>{pct}%</span>}</span>
+                                            {gameSettings.showCourtStint && <span className="pstint" style={{ color: courtWarn ? "var(--red)" : "var(--green)" }}>▲ {fmtMs(stintMs)}</span>}
                                             {sel && <span className="pbadge b-out">OUT ▼</span>}
                                         </div>
                                     </div>
@@ -334,13 +418,16 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         <div className="pgrid">
                             {bench.map(p => {
                                 const sel = selIn.has(p.id);
+                                const stintMs = liveStintMs(p.id);
+                                const benchWarn = gameSettings.benchWarningMin > 0 && stintMs >= gameSettings.benchWarningMin * 60000;
+                                const pct = liveTotalMs > 0 ? Math.round(liveCourtMs(p.id) / liveTotalMs * 100) : 0;
                                 return (
-                                    <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}`} onClick={() => tapPlayer(p.id)}>
-                                        <div className="pnum">#{p.number}</div>
+                                    <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}${benchWarn ? " stint-warn" : ""}`} onClick={() => tapPlayer(p.id)}>
+                                        {gameSettings.showPlayerNumber && <div className="pnum">#{p.number}</div>}
                                         <div className="pinfo">
                                             <FitName>{p.name}</FitName>
-                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
-                                            <span className="pstint" style={{ color: "var(--blue)" }}>▼ {fmtMs(liveStintMs(p.id))}</span>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}{gameSettings.showGamePct && <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: 4 }}>{pct}%</span>}</span>
+                                            {gameSettings.showBenchStint && <span className="pstint" style={{ color: benchWarn ? "var(--red)" : "var(--blue)" }}>▼ {fmtMs(stintMs)}</span>}
                                             {sel && <span className="pbadge b-in">IN ▲</span>}
                                         </div>
                                     </div>
@@ -382,13 +469,14 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         {[...players].sort((a, b) => liveCourtMs(b.id) - liveCourtMs(a.id)).map(p => {
                             const ms = liveCourtMs(p.id);
                             const totalMs = liveTotalMs > 0 ? liveTotalMs : 1;
-                            const pct = (ms / totalMs * 100).toFixed(1);
+                            const pct = Math.round(ms / totalMs * 100);
                             return (
                                 <div key={p.id} className="srow">
                                     <div><span className="srow-num">#{p.number}</span><span style={{ fontWeight: 600 }}>{p.name}</span>
                                         {p.onCourt && <span style={{ fontSize: 9, color: "var(--green)", marginLeft: 6 }}>● LIVE</span>}
                                     </div>
-                                    <div style={{ textAlign: "right" }}><div className="srow-time" style={{ fontSize: 18 }}>{fmtMs(ms)}</div><div className="srow-pct" style={{ fontSize: 15 }}>{pct}%</div></div>
+                                    <div className="srow-time">{fmtMs(ms)}</div>
+                                    <div className="srow-pct">{pct}%</div>
                                 </div>
                             );
                         })}
@@ -402,20 +490,88 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-title">GAME LOG</div>
                         {eventLog.length === 0 && <div className="empty">No events yet</div>}
-                        {eventLog.map(e => (
-                            <div key={e.ts} className="log-entry">
-                                <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
-                                {e.type === 'sub' && <>
-                                    <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
-                                    <span style={{ color: "var(--text-dim)" }}>→</span>
-                                    <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
-                                </>}
-                                {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
-                                {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
-                                {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
-                            </div>
-                        ))}
+                        {(() => {
+                            const grouped = [];
+                            eventLog.forEach(e => {
+                                const prev = grouped[grouped.length - 1];
+                                if (e.type === 'sub' && prev && prev.type === 'sub-group' && prev.time === e.time && prev.quarter === e.quarter) {
+                                    prev.subs.push(e);
+                                } else if (e.type === 'sub') {
+                                    grouped.push({ type: 'sub-group', time: e.time, quarter: e.quarter, subs: [e], ts: e.ts });
+                                } else {
+                                    grouped.push(e);
+                                }
+                            });
+                            return grouped.map(e => (
+                                <div key={e.ts} className="log-entry" style={e.type === 'sub-group' && e.subs.length > 1 ? { flexDirection: 'column', alignItems: 'flex-start', gap: 4 } : {}}>
+                                    {e.type === 'sub-group' && e.subs.length === 1 && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.subs[0].out}</span>
+                                        <span style={{ color: "var(--text-dim)" }}>→</span>
+                                        <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.subs[0].in}</span>
+                                    </>}
+                                    {e.type === 'sub-group' && e.subs.length > 1 && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 4 }}>
+                                            {e.subs.map((s, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <span style={{ color: "var(--red)", fontWeight: 600 }}>{s.out}</span>
+                                                    <span style={{ color: "var(--text-dim)" }}>→</span>
+                                                    <span style={{ color: "var(--green)", fontWeight: 600 }}>{s.in}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>}
+                                    {e.type === 'clock_start' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--green)" }}>▶ Clock started</span>
+                                    </>}
+                                    {e.type === 'clock_pause' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>
+                                    </>}
+                                    {e.type === 'quarter_change' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>
+                                    </>}
+                                    {e.type === 'period_end' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--text-mid)" }}>■ {e.detail} ended</span>
+                                    </>}
+                                </div>
+                            ));
+                        })()}
                         <button className="hbtn" style={{ width: "100%", marginTop: 14, padding: "9px", fontSize: 13 }} onClick={() => setShowLog(false)}>CLOSE</button>
+                    </div>
+                </div>
+            )}
+
+            {showConfig && (
+                <GameConfigModal
+                    settings={gameSettings}
+                    opponent={opponent}
+                    onOpponentChange={(name) => {
+                        if (name !== opponent) {
+                            db.run("UPDATE games SET opponent=? WHERE id=?", [name, gameId]);
+                            saveDb(db);
+                        }
+                    }}
+                    onSave={(s) => { setGameSettings(s); saveGameSettings(s); }}
+                    onClose={() => setShowConfig(false)}
+                />
+            )}
+
+            {showEndConfirm && (
+                <div className="overlay" onClick={() => setShowEndConfirm(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 320, textAlign: "center" }}>
+                        <div className="modal-title">END GAME?</div>
+                        <p style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 18 }}>
+                            This will finalize the game and save all stats. You won't be able to resume.
+                        </p>
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setShowEndConfirm(false)}>CANCEL</button>
+                            <button className="btn-danger" style={{ flex: 1, padding: "10px", fontSize: 14, letterSpacing: 2 }} onClick={() => { setShowEndConfirm(false); endGame(); }}>END GAME</button>
+                        </div>
                     </div>
                 </div>
             )}

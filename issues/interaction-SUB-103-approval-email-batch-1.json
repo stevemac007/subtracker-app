@@ -1,0 +1,7 @@
+{
+  "kind": "request_confirmation",
+  "title": "Approve league outreach email batch 1",
+  "body": "## Approval Needed: Send 6 Outreach Emails to Basketball Associations\n\n**What:** Send personalized HTML emails to 6 Australian basketball associations offering a free SubTracker pilot.\n\n**Recipients:**\n1. Basketball NSW — info@bnsw.com.au\n2. Basketball Victoria (enquiries) — enquiries@basketballvictoria.com.au\n3. Basketball Victoria (coaching) — coaching@basketballvictoria.com.au\n4. Basketball Queensland — admin@basketballqld.net.au; coachdev@basketballqld.net.au\n5. Wyndham Basketball — rep@wyndhambasketball.com\n6. Banyule Hawks — info@banyulehawks.com.au\n\n**Offer:** Free pilot — unlimited teams for the season, zero setup.\n\n**Assets:**\n- Email template: `marketing/email-template-outreach-1.html`\n- Personalized batch: `marketing/ready-to-send-batch-1.md`\n- Full sequence: `marketing/outreach-email-sequence.md`\n\n**Risk:** Low. Highly targeted, personalized, value-first messaging. 2 follow-ups max with clear opt-out.\n\n**Full details:** `issues/approval-request-league-email-batch-1.md`",
+  "continuationPolicy": "wake_assignee",
+  "idempotencyKey": "confirmation:SUB-103:email-batch-1"
+}

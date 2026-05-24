@@ -1,7 +1,7 @@
 # Project Structure
 
 ```
-subtime-app/                  # App root (all commands run from here)
+subtracker/                   # App root (all commands run from here)
 ├── index.html                # SPA entry point
 ├── package.json              # Dependencies and scripts
 ├── vite.config.js            # Vite config (React plugin)

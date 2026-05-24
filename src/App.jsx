@@ -7,13 +7,14 @@ import RosterScreen from "./screens/RosterScreen.jsx";
 import HistoryScreen from "./screens/HistoryScreen.jsx";
 import NewGameScreen from "./screens/NewGameScreen.jsx";
 import GameScreen from "./screens/GameScreen.jsx";
-import ResourcesScreen from "./screens/ResourcesScreen.jsx";
+
 
 export default function App() {
   const [db, setDb] = useState(null);
   const [dbError, setDbError] = useState(null);
   const [screen, setScreen] = useState("home");
   const [gameCtx, setGameCtx] = useState(null);
+  const [historyGameId, setHistoryGameId] = useState(null);
   const [activeTeamId, setActiveTeamIdState] = useState(null);
 
   useEffect(() => {
@@ -57,8 +58,7 @@ export default function App() {
   if (!db) return (<><GlobalStyles /><Loader msg="LOADING DATABASE…" /></>);
 
   if (screen === "roster") return <RosterScreen key={activeTeamId} db={db} onBack={() => setScreen("home")} activeTeamId={activeTeamId} onTeamChange={setActiveTeam} />;
-  if (screen === "history") return <HistoryScreen db={db} onBack={() => setScreen("home")} onResume={resumeGame} activeTeamId={activeTeamId} />;
-  if (screen === "resources") return <ResourcesScreen onBack={() => setScreen("home")} />;
+  if (screen === "history") return <HistoryScreen db={db} onBack={() => setScreen("home")} onResume={resumeGame} activeTeamId={activeTeamId} initialGameId={historyGameId} />;
   if (screen === "newgame") return (
     <NewGameScreen db={db} onBack={() => setScreen("home")}
       onStart={ctx => { setGameCtx(ctx); setScreen("game"); }} activeTeamId={activeTeamId} />
@@ -71,9 +71,8 @@ export default function App() {
   return (
     <HomeScreen db={db}
       onNewGame={() => setScreen("newgame")}
-      onHistory={() => setScreen("history")}
+      onHistory={(gid) => { setHistoryGameId(gid || null); setScreen("history"); }}
       onRoster={() => setScreen("roster")}
-      onResources={() => setScreen("resources")}
       onResume={resumeGame}
       activeTeamId={activeTeamId}
       onTeamChange={setActiveTeam}

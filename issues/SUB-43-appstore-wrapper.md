@@ -10,10 +10,11 @@ owners:
 dependencies:
 - SubTracker core SPA stability (existing)
 - Design doc: openspec/changes/appstore-wrapping/design.md
+- Related: SUB-165-capacitor-wrapper-mvp.md (executable tasks for wrapper MVP)
 
 tasks:
 - task: Scaffold Capacitor-based wrapper skeleton (iOS + Android)
-  status: pending
+  status: in_progress
 - task: Wire SPA build output into wrapper webDir (www)
   status: pending
 - task: Add basic native assets (icons, splash screens) for iOS/Android
