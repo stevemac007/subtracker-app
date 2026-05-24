@@ -45,11 +45,11 @@ const GlobalStyles = () => {
     .qbtn.active { background:var(--amber); color:#1a0e00; border-color:var(--amber); }
     .qbtn:hover:not(.active) { border-color:var(--text-mid); color:var(--text); }
     .cbtns { display:flex; gap:5px; flex:1; }
-    .cbtn { flex:1; border:none; cursor:pointer; border-radius:5px; font-family:'Bebas Neue',sans-serif; letter-spacing:1px; font-size:18px; padding:12px 18px; transition:all .12s; text-align:center; }
+    .cbtn { flex:1; cursor:pointer; border-radius:5px; font-family:'Bebas Neue',sans-serif; letter-spacing:1px; font-size:18px; padding:12px 18px; transition:all .12s; text-align:center; border:1px solid var(--panel-border); }
     .cbtn:active { transform:scale(.95); }
-    .cbtn-play { background:var(--amber); color:#1a0e00; }
-    .cbtn-play:hover { background:#ffc04a; }
-    .cbtn-zero { background:rgba(255,255,255,.06); color:var(--text); border:1px solid rgba(255,255,255,.18); }
+    .cbtn-play { background:var(--amber); color:#1a0e00; border-color:var(--amber); }
+    .cbtn-play:hover { background:#ffc04a; border-color:#ffc04a; }
+    .cbtn-zero { background:rgba(255,255,255,.06); color:var(--text); border-color:var(--panel-border); }
     .cbtn-zero:hover { border-color:var(--text-mid); color:var(--text); }
     .period-pill { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:1.5px; color:var(--text-dim); }
 
