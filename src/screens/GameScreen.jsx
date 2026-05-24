@@ -3,6 +3,8 @@ import { dbAll, dbGet, dbRun, saveDb } from "../db.js";
 import { fmt, fmtMs } from "../utils.js";
 import GlobalStyles from "../GlobalStyles.jsx";
 import FitName from "../FitName.jsx";
+import GameConfigModal from "../components/GameConfigModal.jsx";
+import { loadGameSettings, saveGameSettings } from "../gameSettings.js";
 
 export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const gameRow = dbGet(db, "SELECT * FROM games WHERE id=?", [gameId]);
@@ -20,7 +22,9 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const [selIn, setSelIn] = useState(new Set());
     const [showStats, setShowStats] = useState(false);
     const [showLog, setShowLog] = useState(false);
-    const [sortMode, setSortMode] = useState("game");
+    const [showConfig, setShowConfig] = useState(false);
+    const [showEndConfirm, setShowEndConfirm] = useState(false);
+    const [gameSettings, setGameSettings] = useState(() => loadGameSettings());
     const [eventLog, setEventLog] = useState([]);
     const [toast, setToast] = useState(null);
     const toastTimer = useRef(null);
@@ -273,6 +277,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         onEnd();
     };
 
+    const sortMode = gameSettings.sortMode;
     const onCourt = players.filter(p => p.onCourt).sort((a, b) =>
         sortMode === "stint" ? liveStintMs(b.id) - liveStintMs(a.id) : liveCourtMs(b.id) - liveCourtMs(a.id)
     );
@@ -292,7 +297,8 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                     <div className="hdr-acts">
                         <button className="hbtn hbtn-lg" onClick={() => setShowLog(true)}>LOG</button>
                         <button className="hbtn hbtn-lg" onClick={() => setShowStats(true)}>STATS</button>
-                        <button className="hbtn hbtn-lg" onClick={endGame}>END</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowEndConfirm(true)}>END</button>
+                        <button className="hbtn hbtn-lg" onClick={() => setShowConfig(true)} style={{ flex: 0.5, padding: "8px 4px" }}>⚙</button>
                     </div>
                 </div>
 
@@ -321,7 +327,7 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                     </div>
                     <button className={`hbtn${sortMode === "stint" ? " active" : ""}`}
                         style={{ writingMode: "vertical-lr", padding: "14px 14px", fontSize: 14, letterSpacing: 2, lineHeight: 1 }}
-                        onClick={() => setSortMode(s => s === "game" ? "stint" : "game")}>
+                        onClick={() => setGameSettings(s => { const n = { ...s, sortMode: s.sortMode === "game" ? "stint" : "game" }; saveGameSettings(n); return n; })}>
                         {sortMode === "game" ? "GAME" : "STINT"}
                     </button>
                 </div>
@@ -335,13 +341,16 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         <div className="pgrid">
                             {onCourt.map(p => {
                                 const sel = selOut.has(p.id);
+                                const stintMs = liveStintMs(p.id);
+                                const courtWarn = gameSettings.courtWarningMin > 0 && stintMs >= gameSettings.courtWarningMin * 60000;
+                                const pct = liveTotalMs > 0 ? Math.round(liveCourtMs(p.id) / liveTotalMs * 100) : 0;
                                 return (
-                                    <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}`} onClick={() => tapPlayer(p.id)}>
-                                        <div className="pnum">#{p.number}</div>
+                                    <div key={p.id} className={`pcard on-c ${sel ? "sel-out" : ""}${courtWarn ? " stint-warn" : ""}`} onClick={() => tapPlayer(p.id)}>
+                                        {gameSettings.showPlayerNumber && <div className="pnum">#{p.number}</div>}
                                         <div className="pinfo">
                                             <FitName>{p.name}</FitName>
-                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
-                                            <span className="pstint" style={{ color: "var(--green)" }}>▲ {fmtMs(liveStintMs(p.id))}</span>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}{gameSettings.showGamePct && <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: 4 }}>{pct}%</span>}</span>
+                                            {gameSettings.showCourtStint && <span className="pstint" style={{ color: courtWarn ? "var(--red)" : "var(--green)" }}>▲ {fmtMs(stintMs)}</span>}
                                             {sel && <span className="pbadge b-out">OUT ▼</span>}
                                         </div>
                                     </div>
@@ -357,13 +366,16 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         <div className="pgrid">
                             {bench.map(p => {
                                 const sel = selIn.has(p.id);
+                                const stintMs = liveStintMs(p.id);
+                                const benchWarn = gameSettings.benchWarningMin > 0 && stintMs >= gameSettings.benchWarningMin * 60000;
+                                const pct = liveTotalMs > 0 ? Math.round(liveCourtMs(p.id) / liveTotalMs * 100) : 0;
                                 return (
-                                    <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}`} onClick={() => tapPlayer(p.id)}>
-                                        <div className="pnum">#{p.number}</div>
+                                    <div key={p.id} className={`pcard bnch ${sel ? "sel-in" : ""}${benchWarn ? " stint-warn" : ""}`} onClick={() => tapPlayer(p.id)}>
+                                        {gameSettings.showPlayerNumber && <div className="pnum">#{p.number}</div>}
                                         <div className="pinfo">
                                             <FitName>{p.name}</FitName>
-                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}</span>
-                                            <span className="pstint" style={{ color: "var(--blue)" }}>▼ {fmtMs(liveStintMs(p.id))}</span>
+                                            <span className="ptime">{fmtMs(liveCourtMs(p.id))}{gameSettings.showGamePct && <span style={{ fontSize: 10, color: "var(--text-dim)", marginLeft: 4 }}>{pct}%</span>}</span>
+                                            {gameSettings.showBenchStint && <span className="pstint" style={{ color: benchWarn ? "var(--red)" : "var(--blue)" }}>▼ {fmtMs(stintMs)}</span>}
                                             {sel && <span className="pbadge b-in">IN ▲</span>}
                                         </div>
                                     </div>
@@ -474,6 +486,36 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                             ));
                         })()}
                         <button className="hbtn" style={{ width: "100%", marginTop: 14, padding: "9px", fontSize: 13 }} onClick={() => setShowLog(false)}>CLOSE</button>
+                    </div>
+                </div>
+            )}
+
+            {showConfig && (
+                <GameConfigModal
+                    settings={gameSettings}
+                    opponent={opponent}
+                    onOpponentChange={(name) => {
+                        if (name !== opponent) {
+                            db.run("UPDATE games SET opponent=? WHERE id=?", [name, gameId]);
+                            saveDb(db);
+                        }
+                    }}
+                    onSave={(s) => { setGameSettings(s); saveGameSettings(s); }}
+                    onClose={() => setShowConfig(false)}
+                />
+            )}
+
+            {showEndConfirm && (
+                <div className="overlay" onClick={() => setShowEndConfirm(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 320, textAlign: "center" }}>
+                        <div className="modal-title">END GAME?</div>
+                        <p style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 18 }}>
+                            This will finalize the game and save all stats. You won't be able to resume.
+                        </p>
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button className="btn-ghost" style={{ flex: 1 }} onClick={() => setShowEndConfirm(false)}>CANCEL</button>
+                            <button className="btn-danger" style={{ flex: 1, padding: "10px", fontSize: 14, letterSpacing: 2 }} onClick={() => { setShowEndConfirm(false); endGame(); }}>END GAME</button>
+                        </div>
                     </div>
                 </div>
             )}

@@ -70,6 +70,7 @@ const GlobalStyles = () => {
     .pcard.bnch::before { background:var(--blue);  }
     .pcard.sel-out { border-color:var(--red);   background:var(--red-bg);   box-shadow:0 0 8px rgba(239,68,68,.2);  }
     .pcard.sel-in  { border-color:var(--green); background:var(--green-bg); box-shadow:0 0 8px rgba(34,197,94,.2); }
+    .pcard.stint-warn:not(.sel-out):not(.sel-in) { border-color:var(--red); background:var(--red-bg); box-shadow:0 0 8px rgba(239,68,68,.25); }
     .pcard.on-c:not(.sel-out):hover { border-color:var(--red-bd);   }
     .pcard.bnch:not(.sel-in):hover  { border-color:var(--green-bd); }
     .pnum { font-family:'Bebas Neue',sans-serif; font-size:36px; color:var(--amber); min-width:36px; text-align:center; line-height:1; flex-shrink:0; }
