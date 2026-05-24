@@ -24,20 +24,23 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId, init
       WHERE gp.game_id=? ORDER BY gp.court_ms DESC
     `, [initialSelection.id]);
         const subs = dbAll(db, `
-      SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
+      SELECT s.id, s.game_time_sec, s.quarter, s.wall_time, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
       WHERE s.game_id=? ORDER BY s.id
     `, [initialSelection.id]);
-        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail, wall_time
       FROM game_events WHERE game_id=? ORDER BY id`, [initialSelection.id]);
         const merged = [
-            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
-            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's', wallTime: s.wall_time })),
+            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e', wallTime: e.wall_time })),
         ];
         merged.sort((a, b) => {
+            if (a.wallTime && b.wallTime) return a.wallTime - b.wallTime;
+            if (a.quarter !== b.quarter) return a.quarter - b.quarter;
             if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+            if (a.tbl !== b.tbl) return a.tbl === 'e' ? -1 : 1;
             return a.sortId - b.sortId;
         });
         return { players: gp, log: merged.map((e, i) => ({ ...e, ts: `h-${i}` })), periodType: pt };
@@ -62,20 +65,23 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId, init
     `, [g.id]);
         setGamePlayers(gp);
         const subs = dbAll(db, `
-      SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
+      SELECT s.id, s.game_time_sec, s.quarter, s.wall_time, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
       WHERE s.game_id=? ORDER BY s.id
     `, [g.id]);
-        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail, wall_time
       FROM game_events WHERE game_id=? ORDER BY id`, [g.id]);
         const merged = [
-            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
-            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's', wallTime: s.wall_time })),
+            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e', wallTime: e.wall_time })),
         ];
         merged.sort((a, b) => {
+            if (a.wallTime && b.wallTime) return a.wallTime - b.wallTime;
+            if (a.quarter !== b.quarter) return a.quarter - b.quarter;
             if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+            if (a.tbl !== b.tbl) return a.tbl === 'e' ? -1 : 1;
             return a.sortId - b.sortId;
         });
         setEventLog(merged.map((e, i) => ({ ...e, ts: `h-${i}` })));

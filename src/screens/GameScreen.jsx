@@ -40,19 +40,22 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const gps = dbAll(db, "SELECT player_id, court_ms FROM game_players WHERE game_id=?", [gameId]);
         gps.forEach(gp => { bankedMs.current[gp.player_id] = gp.court_ms; });
         initialPlayers.forEach(p => { stintRoleBanked.current[p.id] = 0; stintRoleStart.current[p.id] = null; });
-        const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
+        const subs = dbAll(db, `SELECT s.id, s.game_time_sec, s.quarter, s.wall_time, po.name as out_name, pi.name as in_name
       FROM substitutions s
       JOIN players po ON po.id=s.player_out_id
       JOIN players pi ON pi.id=s.player_in_id
       WHERE s.game_id=? ORDER BY s.id`, [gameId]);
-        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail, wall_time
       FROM game_events WHERE game_id=? ORDER BY id`, [gameId]);
         const merged = [
-            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
-            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's', wallTime: s.wall_time })),
+            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e', wallTime: e.wall_time })),
         ];
         merged.sort((a, b) => {
-            if (a.time !== b.time) return a.time.localeCompare(b.time);
+            if (a.wallTime && b.wallTime) return a.wallTime - b.wallTime;
+            if (a.quarter !== b.quarter) return a.quarter - b.quarter;
+            if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+            if (a.tbl !== b.tbl) return a.tbl === 'e' ? -1 : 1;
             return a.sortId - b.sortId;
         });
         setEventLog(merged.reverse().map((e, i) => ({ ...e, ts: `loaded-${i}` })));
@@ -126,10 +129,12 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             ? gameAccMs.current + (Date.now() - clockStartWall.current)
             : gameAccMs.current;
         const gameSec = Math.floor(elapsed / 1000);
-        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
-            [gameId, eventType, gameSec, quarter, detail]);
+        const wallTime = Date.now();
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, eventType, gameSec, quarter, detail, wallTime]);
         saveDb(db);
-        setEventLog(log => [{ type: eventType, time: fmt(gameSec), quarter, detail, ts: Date.now() + Math.random() }, ...log].slice(0, 100));
+        const ts = `${eventType}-${wallTime}-${Math.random()}`;
+        setEventLog(log => [{ type: eventType, time: fmt(gameSec), quarter, detail, ts, wallTime }, ...log].slice(0, 100));
     }, [db, gameId, quarter]);
 
     const startClock = useCallback(() => {
@@ -137,9 +142,9 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const w = Date.now();
         clockStartWall.current = w;
         runningRef.current = true;
-        setPlayers(ps => { ps.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; }); return ps; });
+        players.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; });
         logEvent('clock_start');
-    }, [logEvent]);
+    }, [logEvent, players]);
 
     const pauseClock = useCallback(() => {
         if (!runningRef.current) return;
@@ -150,35 +155,33 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         periodAccMs.current += elapsed;
         clockStartWall.current = null;
         runningRef.current = false;
-        setPlayers(ps => {
-            ps.forEach(p => {
-                if (stintStart.current[p.id] != null) {
-                    bankedMs.current[p.id] = (bankedMs.current[p.id] ?? 0) + (w - stintStart.current[p.id]);
-                    stintStart.current[p.id] = null;
-                }
-                if (stintRoleStart.current[p.id] != null) {
-                    stintRoleBanked.current[p.id] = (stintRoleBanked.current[p.id] ?? 0) + (w - stintRoleStart.current[p.id]);
-                    stintRoleStart.current[p.id] = null;
-                }
-            });
-            return ps;
+        players.forEach(p => {
+            if (stintStart.current[p.id] != null) {
+                bankedMs.current[p.id] = (bankedMs.current[p.id] ?? 0) + (w - stintStart.current[p.id]);
+                stintStart.current[p.id] = null;
+            }
+            if (stintRoleStart.current[p.id] != null) {
+                stintRoleBanked.current[p.id] = (stintRoleBanked.current[p.id] ?? 0) + (w - stintRoleStart.current[p.id]);
+                stintRoleStart.current[p.id] = null;
+            }
         });
         persistTimes();
         logEvent('clock_pause');
-    }, [persistTimes, logEvent]);
+    }, [persistTimes, logEvent, players]);
 
     const changeQuarter = (newQ) => {
         pauseClock();
         periodAccMs.current = 0;
         setQuarter(newQ);
         const gameSec = Math.floor(gameAccMs.current / 1000);
+        const wallTime = Date.now();
         const label = periodType === "halves"
             ? (newQ === 3 ? "OT" : `H${newQ}`)
             : (newQ === 5 ? "OT" : `Q${newQ}`);
-        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail) VALUES (?,?,?,?,?)",
-            [gameId, 'quarter_change', gameSec, newQ, label]);
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, 'quarter_change', gameSec, newQ, label, wallTime]);
         saveDb(db);
-        setEventLog(log => [{ type: 'quarter_change', time: fmt(gameSec), quarter: newQ, detail: label, ts: Date.now() }, ...log].slice(0, 100));
+        setEventLog(log => [{ type: 'quarter_change', time: fmt(gameSec), quarter: newQ, detail: label, ts: wallTime, wallTime }, ...log].slice(0, 100));
     };
 
     const toggleClock = () => runningRef.current ? pauseClock() : startClock();
@@ -220,14 +223,14 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
             stintRoleBanked.current[iid] = 0;
             stintRoleStart.current[iid] = runningRef.current ? w : null;
 
-            db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id) VALUES (?,?,?,?,?)",
-                [gameId, gameSec, quarter, oid, iid]);
+            db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id,wall_time) VALUES (?,?,?,?,?,?)",
+                [gameId, gameSec, quarter, oid, iid, w]);
             db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
                 [bankedMs.current[oid] ?? 0, gameId, oid]);
             db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
                 [bankedMs.current[iid] ?? 0, gameId, iid]);
 
-            newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
+            newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: w + newLog.length, wallTime: w });
         });
         db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
         saveDb(db);
