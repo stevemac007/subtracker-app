@@ -423,19 +423,53 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-title">GAME LOG</div>
                         {eventLog.length === 0 && <div className="empty">No events yet</div>}
-                        {eventLog.map(e => (
-                            <div key={e.ts} className="log-entry">
-                                <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
-                                {e.type === 'sub' && <>
-                                    <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
-                                    <span style={{ color: "var(--text-dim)" }}>→</span>
-                                    <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
-                                </>}
-                                {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
-                                {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
-                                {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
-                            </div>
-                        ))}
+                        {(() => {
+                            const grouped = [];
+                            eventLog.forEach(e => {
+                                const prev = grouped[grouped.length - 1];
+                                if (e.type === 'sub' && prev && prev.type === 'sub-group' && prev.time === e.time && prev.quarter === e.quarter) {
+                                    prev.subs.push(e);
+                                } else if (e.type === 'sub') {
+                                    grouped.push({ type: 'sub-group', time: e.time, quarter: e.quarter, subs: [e], ts: e.ts });
+                                } else {
+                                    grouped.push(e);
+                                }
+                            });
+                            return grouped.map(e => (
+                                <div key={e.ts} className="log-entry" style={e.type === 'sub-group' && e.subs.length > 1 ? { flexDirection: 'column', alignItems: 'flex-start', gap: 4 } : {}}>
+                                    {e.type === 'sub-group' && e.subs.length === 1 && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.subs[0].out}</span>
+                                        <span style={{ color: "var(--text-dim)" }}>→</span>
+                                        <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.subs[0].in}</span>
+                                    </>}
+                                    {e.type === 'sub-group' && e.subs.length > 1 && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingLeft: 4 }}>
+                                            {e.subs.map((s, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <span style={{ color: "var(--red)", fontWeight: 600 }}>{s.out}</span>
+                                                    <span style={{ color: "var(--text-dim)" }}>→</span>
+                                                    <span style={{ color: "var(--green)", fontWeight: 600 }}>{s.in}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>}
+                                    {e.type === 'clock_start' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--green)" }}>▶ Clock started</span>
+                                    </>}
+                                    {e.type === 'clock_pause' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>
+                                    </>}
+                                    {e.type === 'quarter_change' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>
+                                    </>}
+                                </div>
+                            ));
+                        })()}
                         <button className="hbtn" style={{ width: "100%", marginTop: 14, padding: "9px", fontSize: 13 }} onClick={() => setShowLog(false)}>CLOSE</button>
                     </div>
                 </div>
