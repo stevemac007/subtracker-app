@@ -7,16 +7,52 @@ import AdSenseBanner from "../components/AdSenseBanner.jsx";
 // banner after the main content in both list and detail views. Next step: QA to verify
 // ad rendering and layout on desktop/mobile.
 
-export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
+export default function HistoryScreen({ db, onBack, onResume, activeTeamId, initialGameId }) {
     const initialGames = useMemo(() => dbAll(db, "SELECT * FROM games WHERE team_id = ? ORDER BY id DESC", [activeTeamId]), [db, activeTeamId]);
+
+    const initialSelection = useMemo(() => {
+        if (!initialGameId) return null;
+        return initialGames.find(g => g.id === initialGameId) || null;
+    }, [initialGameId, initialGames]);
+
+    const initialGameData = useMemo(() => {
+        if (!initialSelection) return { players: [], log: [], periodType: "quarters" };
+        const pt = initialSelection.period_type ?? "quarters";
+        const gp = dbAll(db, `
+      SELECT gp.*, p.name, p.number
+      FROM game_players gp JOIN players p ON p.id=gp.player_id
+      WHERE gp.game_id=? ORDER BY gp.court_ms DESC
+    `, [initialSelection.id]);
+        const subs = dbAll(db, `
+      SELECT s.id, s.game_time_sec, s.quarter, po.name as out_name, pi.name as in_name
+      FROM substitutions s
+      JOIN players po ON po.id=s.player_out_id
+      JOIN players pi ON pi.id=s.player_in_id
+      WHERE s.game_id=? ORDER BY s.id
+    `, [initialSelection.id]);
+        const events = dbAll(db, `SELECT id, event_type, game_time_sec, quarter, detail
+      FROM game_events WHERE game_id=? ORDER BY id`, [initialSelection.id]);
+        const merged = [
+            ...subs.map(s => ({ type: 'sub', time: fmt(s.game_time_sec), timeSec: s.game_time_sec, quarter: s.quarter, out: s.out_name, in: s.in_name, sortId: s.id, tbl: 's' })),
+            ...events.map(e => ({ type: e.event_type, time: fmt(e.game_time_sec), timeSec: e.game_time_sec, quarter: e.quarter, detail: e.detail, sortId: e.id, tbl: 'e' })),
+        ];
+        merged.sort((a, b) => {
+            if (a.timeSec !== b.timeSec) return a.timeSec - b.timeSec;
+            return a.sortId - b.sortId;
+        });
+        return { players: gp, log: merged.map((e, i) => ({ ...e, ts: `h-${i}` })), periodType: pt };
+    }, [db, initialSelection]);
+
     const [games, setGames] = useState(initialGames);
-    const [selected, setSelected] = useState(null);
-    const [gamePlayers, setGamePlayers] = useState([]);
-    const [eventLog, setEventLog] = useState([]);
-    const [selectedPeriodType, setSelectedPeriodType] = useState("quarters");
+    const [selected, setSelected] = useState(initialSelection);
+    const [gamePlayers, setGamePlayers] = useState(initialGameData.players);
+    const [eventLog, setEventLog] = useState(initialGameData.log);
+    const [selectedPeriodType, setSelectedPeriodType] = useState(initialGameData.periodType);
+    const [detailTab, setDetailTab] = useState("summary");
 
     const selectGame = (g) => {
         setSelected(g);
+        setDetailTab("summary");
         const pt = g.period_type ?? "quarters";
         setSelectedPeriodType(pt);
         const gp = dbAll(db, `
@@ -64,48 +100,71 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId }) {
             <div className="hdr">
                 <button className="hbtn" onClick={() => setSelected(null)}>← BACK</button>
                 <span className="hdr-title" style={{ fontSize: 15 }}>{selected.opponent}</span>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: 10, color: "var(--text-dim)" }}>
+                    {dateLabel(selected.date)} · {fmt(selected.total_secs)}
+                </span>
                 <div className="hdr-acts">
                     {!selected.finished && <button className="hbtn active" onClick={() => onResume(selected.id)}>RESUME</button>}
                     <button className="btn-danger btn-sm" onClick={() => deleteGame(selected.id)}>DELETE</button>
                 </div>
             </div>
+            <div style={{ padding: "10px 14px 0", display: "flex", gap: 0, borderBottom: "1px solid var(--panel-border)", flexShrink: 0 }}>
+                <button
+                    onClick={() => setDetailTab("summary")}
+                    style={{
+                        flex: 1, padding: "8px 0", border: "none", cursor: "pointer",
+                        fontFamily: "'Bebas Neue',sans-serif", fontSize: 14, letterSpacing: "1px",
+                        background: "transparent",
+                        color: detailTab === "summary" ? "var(--amber)" : "var(--text-dim)",
+                        borderBottom: detailTab === "summary" ? "2px solid var(--amber)" : "2px solid transparent",
+                    }}
+                >SUMMARY</button>
+                <button
+                    onClick={() => setDetailTab("detail")}
+                    style={{
+                        flex: 1, padding: "8px 0", border: "none", cursor: "pointer",
+                        fontFamily: "'Bebas Neue',sans-serif", fontSize: 14, letterSpacing: "1px",
+                        background: "transparent",
+                        color: detailTab === "detail" ? "var(--amber)" : "var(--text-dim)",
+                        borderBottom: detailTab === "detail" ? "2px solid var(--amber)" : "2px solid transparent",
+                    }}
+                >DETAIL</button>
+            </div>
             <div className="scroll-area">
-                <div className="sec-hd">
-                    {dateLabel(selected.date)}
-                    <span className="sec-hd-sub">{fmt(selected.total_secs)} game time</span>
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                    {gamePlayers.map(gp => {
-                        const totalMs = selected.total_secs > 0 ? selected.total_secs * 1000 : 1;
-                        const pct = (gp.court_ms / totalMs * 100).toFixed(1);
-                        return (
-                            <div key={gp.id} className="srow">
-                                <div><span className="srow-num">#{gp.number}</span><span style={{ fontWeight: 600 }}>{gp.name}</span>
-                                    {gp.is_starter === 1 && <span style={{ fontSize: 9, color: "var(--amber)", marginLeft: 6 }}>STARTER</span>}
-                                </div>
-                                <div style={{ textAlign: "right" }}>
+                {detailTab === "summary" && <>
+                    <div>
+                        {gamePlayers.map(gp => {
+                            const totalMs = selected.total_secs > 0 ? selected.total_secs * 1000 : 1;
+                            const pct = Math.round(gp.court_ms / totalMs * 100);
+                            return (
+                                <div key={gp.id} className="srow">
+                                    <div><span className="srow-num">#{gp.number}</span><span style={{ fontWeight: 600 }}>{gp.name}</span>
+                                        {gp.is_starter === 1 && <span style={{ fontSize: 9, color: "var(--amber)", marginLeft: 6 }}>STARTER</span>}
+                                    </div>
                                     <div className="srow-time">{fmtMs(gp.court_ms)}</div>
-                                    <div className="srow-pct">{pct}% of game</div>
+                                    <div className="srow-pct">{pct}%</div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-                <div className="sec-hd">GAME LOG <span className="sec-hd-sub">{eventLog.length} events</span></div>
-                {eventLog.length === 0 && <div className="empty">No events recorded</div>}
-                {eventLog.map(e => (
-                    <div key={e.ts} className="log-entry">
-                        <span className="log-t">{selectedPeriodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
-                        {e.type === 'sub' && <>
-                            <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
-                            <span style={{ color: "var(--text-dim)" }}>→</span>
-                            <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
-                        </>}
-                        {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
-                        {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
-                        {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
+                            );
+                        })}
                     </div>
-                ))}
+                </>}
+                {detailTab === "detail" && <>
+                    <div className="sec-hd">GAME LOG <span className="sec-hd-sub">{eventLog.length} events</span></div>
+                    {eventLog.length === 0 && <div className="empty">No events recorded</div>}
+                    {eventLog.map(e => (
+                        <div key={e.ts} className="log-entry">
+                            <span className="log-t">{selectedPeriodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                            {e.type === 'sub' && <>
+                                <span style={{ color: "var(--red)", fontWeight: 600 }}>{e.out}</span>
+                                <span style={{ color: "var(--text-dim)" }}>→</span>
+                                <span style={{ color: "var(--green)", fontWeight: 600 }}>{e.in}</span>
+                            </>}
+                            {e.type === 'clock_start' && <span style={{ color: "var(--green)" }}>▶ Clock started</span>}
+                            {e.type === 'clock_pause' && <span style={{ color: "var(--amber)" }}>⏸ Clock paused</span>}
+                            {e.type === 'quarter_change' && <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>}
+                        </div>
+                    ))}
+                </>}
                 {selected.notes ? <div style={{ marginTop: 16, padding: 10, background: "rgba(255,255,255,.03)", borderRadius: 6, fontSize: 12, color: "var(--text-dim)" }}>{selected.notes}</div> : null}
             </div>
         </div>

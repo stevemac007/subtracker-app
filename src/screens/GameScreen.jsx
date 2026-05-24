@@ -204,38 +204,42 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
         const gameSec = Math.floor(displayGameMs / 1000);
         const newLog = [];
 
+        // Perform timing updates on refs and DB writes BEFORE the state updater
+        pairs.forEach(({ out: oid, in: iid }) => {
+            const outP = players.find(p => p.id === oid), inP = players.find(p => p.id === iid);
+            if (!outP || !inP) return;
+
+            if (stintStart.current[oid] != null) {
+                bankedMs.current[oid] = (bankedMs.current[oid] ?? 0) + (w - stintStart.current[oid]);
+                stintStart.current[oid] = null;
+            }
+            if (runningRef.current) stintStart.current[iid] = w;
+
+            stintRoleBanked.current[oid] = 0;
+            stintRoleStart.current[oid] = runningRef.current ? w : null;
+            stintRoleBanked.current[iid] = 0;
+            stintRoleStart.current[iid] = runningRef.current ? w : null;
+
+            db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id) VALUES (?,?,?,?,?)",
+                [gameId, gameSec, quarter, oid, iid]);
+            db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
+                [bankedMs.current[oid] ?? 0, gameId, oid]);
+            db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
+                [bankedMs.current[iid] ?? 0, gameId, iid]);
+
+            newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
+        });
+        db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
+        saveDb(db);
+
+        // Pure state update — no side effects
         setPlayers(ps => {
             const updated = [...ps];
             pairs.forEach(({ out: oid, in: iid }) => {
-                const outP = ps.find(p => p.id === oid), inP = ps.find(p => p.id === iid);
-                if (!outP || !inP) return;
-
-                if (stintStart.current[oid] != null) {
-                    bankedMs.current[oid] = (bankedMs.current[oid] ?? 0) + (w - stintStart.current[oid]);
-                    stintStart.current[oid] = null;
-                }
-                if (runningRef.current) stintStart.current[iid] = w;
-
-                stintRoleBanked.current[oid] = 0;
-                stintRoleStart.current[oid] = runningRef.current ? w : null;
-                stintRoleBanked.current[iid] = 0;
-                stintRoleStart.current[iid] = runningRef.current ? w : null;
-
                 const oi = updated.findIndex(p => p.id === oid), ii = updated.findIndex(p => p.id === iid);
                 if (oi >= 0) updated[oi] = { ...updated[oi], onCourt: false };
                 if (ii >= 0) updated[ii] = { ...updated[ii], onCourt: true };
-
-                db.run("INSERT INTO substitutions (game_id,game_time_sec,quarter,player_out_id,player_in_id) VALUES (?,?,?,?,?)",
-                    [gameId, gameSec, quarter, oid, iid]);
-                db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
-                    [bankedMs.current[oid] ?? 0, gameId, oid]);
-                db.run("UPDATE game_players SET court_ms=? WHERE game_id=? AND player_id=?",
-                    [bankedMs.current[iid] ?? 0, gameId, iid]);
-
-                newLog.push({ type: 'sub', time: fmt(gameSec), quarter, out: outP.name, in: inP.name, ts: Date.now() + newLog.length });
             });
-            db.run("UPDATE games SET total_secs=? WHERE id=?", [Math.floor(totalRunMs.current / 1000), gameId]);
-            saveDb(db);
             return updated;
         });
 
