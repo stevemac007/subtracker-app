@@ -4,8 +4,8 @@
     "description": "Basketball substitution tracker for coaches",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#131009",
-    "theme_color": "#f5a623",
+    "background_color": "#ffffff",
+    "theme_color": "#ea580c",
     "icons": [
         {
             "src": "/app-icon.svg",

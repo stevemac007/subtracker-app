@@ -1,41 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#f5a623" stop-opacity=".15"/>
-      <stop offset="100%" stop-color="#131009" stop-opacity="0"/>
-    </radialGradient>
+    <clipPath id="leftHalf">
+      <rect x="0" y="0" width="256" height="512"/>
+    </clipPath>
+    <clipPath id="rightHalf">
+      <rect x="256" y="0" width="256" height="512"/>
+    </clipPath>
+    <clipPath id="clipS">
+      <text x="148" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260">S</text>
+    </clipPath>
+    <clipPath id="clipT">
+      <text x="364" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260">T</text>
+    </clipPath>
   </defs>
-  <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="#131009"/>
-  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
 
-  <!-- Basketball body -->
-  <circle cx="256" cy="240" r="150" fill="none" stroke="#f5a623" stroke-width="8"/>
-  <!-- Seam lines -->
-  <line x1="106" y1="240" x2="406" y2="240" stroke="#f5a623" stroke-width="4" opacity=".5"/>
-  <line x1="256" y1="90" x2="256" y2="390" stroke="#f5a623" stroke-width="4" opacity=".5"/>
-  <!-- Curved seams -->
-  <path d="M190 100 Q156 240 190 380" fill="none" stroke="#f5a623" stroke-width="4" opacity=".4"/>
-  <path d="M322 100 Q356 240 322 380" fill="none" stroke="#f5a623" stroke-width="4" opacity=".4"/>
+  <!-- Background: left white, right orange -->
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <rect width="512" height="512" rx="112" fill="#ea580c" clip-path="url(#rightHalf)"/>
 
-  <!-- Stopwatch nub at top -->
-  <rect x="244" y="72" width="24" height="20" rx="4" fill="#f5a623" opacity=".7"/>
-  <rect x="250" y="60" width="12" height="16" rx="3" fill="#f5a623" opacity=".5"/>
-  <!-- Stopwatch button -->
-  <rect x="290" y="82" width="16" height="8" rx="2" fill="#f5a623" opacity=".5" transform="rotate(-30 298 86)"/>
-
-  <!-- "ST" text -->
-  <text x="256" y="260" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="100" fill="#131009" opacity=".25" letter-spacing="8">ST</text>
-  <text x="256" y="260" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="100" fill="#f5a623" opacity=".9" letter-spacing="8">ST</text>
-
-  <!-- Subtle clock tick marks around the ball -->
-  <g opacity=".3" stroke="#f5a623" stroke-width="2">
-    <line x1="256" y1="95" x2="256" y2="105"/>
-    <line x1="256" y1="375" x2="256" y2="385"/>
-    <line x1="111" y1="240" x2="121" y2="240"/>
-    <line x1="391" y1="240" x2="401" y2="240"/>
+  <!-- Left side: white basketball seams clipped to S shape -->
+  <g clip-path="url(#clipS)">
+    <text x="148" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260" fill="#ea580c">S</text>
+    <g stroke="#ffffff" fill="none" stroke-width="8" opacity=".9">
+      <circle cx="256" cy="256" r="180"/>
+      <line x1="76" y1="256" x2="436" y2="256"/>
+      <line x1="256" y1="76" x2="256" y2="436"/>
+      <path d="M192 80 Q148 256 192 432"/>
+      <path d="M320 80 Q364 256 320 432"/>
+    </g>
   </g>
 
-  <!-- Subtext -->
-  <text x="256" y="440" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="28" fill="#7a6548" letter-spacing="10">SUBTRACKER</text>
+  <!-- Right side: orange basketball seams clipped to T shape -->
+  <g clip-path="url(#clipT)">
+    <text x="364" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260" fill="#ffffff">T</text>
+    <g stroke="#ea580c" fill="none" stroke-width="8" opacity=".9">
+      <circle cx="256" cy="256" r="180"/>
+      <line x1="76" y1="256" x2="436" y2="256"/>
+      <line x1="256" y1="76" x2="256" y2="436"/>
+      <path d="M192 80 Q148 256 192 432"/>
+      <path d="M320 80 Q364 256 320 432"/>
+    </g>
+  </g>
+
+  <!-- Subtle center divider -->
+  <line x1="256" y1="70" x2="256" y2="442" stroke="#292524" stroke-width="2" opacity=".15"/>
 </svg>

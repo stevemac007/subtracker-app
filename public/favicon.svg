@@ -1,18 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="48" height="48">
   <defs>
-    <radialGradient id="glow" cx="50%" cy="45%" r="50%">
-      <stop offset="0%" stop-color="#f5a623" stop-opacity=".15"/>
-      <stop offset="100%" stop-color="#131009" stop-opacity="0"/>
-    </radialGradient>
+    <clipPath id="leftHalf">
+      <rect x="0" y="0" width="256" height="512"/>
+    </clipPath>
+    <clipPath id="rightHalf">
+      <rect x="256" y="0" width="256" height="512"/>
+    </clipPath>
+    <clipPath id="clipS">
+      <text x="148" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260">S</text>
+    </clipPath>
+    <clipPath id="clipT">
+      <text x="364" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260">T</text>
+    </clipPath>
   </defs>
-  <rect width="512" height="512" rx="112" fill="#131009"/>
-  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
-  <circle cx="256" cy="240" r="150" fill="none" stroke="#f5a623" stroke-width="12"/>
-  <line x1="106" y1="240" x2="406" y2="240" stroke="#f5a623" stroke-width="6" opacity=".5"/>
-  <line x1="256" y1="90" x2="256" y2="390" stroke="#f5a623" stroke-width="6" opacity=".5"/>
-  <path d="M190 100 Q156 240 190 380" fill="none" stroke="#f5a623" stroke-width="6" opacity=".4"/>
-  <path d="M322 100 Q356 240 322 380" fill="none" stroke="#f5a623" stroke-width="6" opacity=".4"/>
-  <rect x="244" y="72" width="24" height="20" rx="4" fill="#f5a623" opacity=".7"/>
-  <rect x="250" y="60" width="12" height="16" rx="3" fill="#f5a623" opacity=".5"/>
-  <text x="256" y="260" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="100" fill="#f5a623" opacity=".9" letter-spacing="8">ST</text>
+
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <rect width="512" height="512" rx="112" fill="#ea580c" clip-path="url(#rightHalf)"/>
+
+  <g clip-path="url(#clipS)">
+    <text x="148" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260" fill="#ea580c">S</text>
+    <g stroke="#ffffff" fill="none" stroke-width="8" opacity=".9">
+      <circle cx="256" cy="256" r="180"/>
+      <line x1="76" y1="256" x2="436" y2="256"/>
+      <line x1="256" y1="76" x2="256" y2="436"/>
+      <path d="M192 80 Q148 256 192 432"/>
+      <path d="M320 80 Q364 256 320 432"/>
+    </g>
+  </g>
+
+  <g clip-path="url(#clipT)">
+    <text x="364" y="330" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="260" fill="#ffffff">T</text>
+    <g stroke="#ea580c" fill="none" stroke-width="8" opacity=".9">
+      <circle cx="256" cy="256" r="180"/>
+      <line x1="76" y1="256" x2="436" y2="256"/>
+      <line x1="256" y1="76" x2="256" y2="436"/>
+      <path d="M192 80 Q148 256 192 432"/>
+      <path d="M320 80 Q364 256 320 432"/>
+    </g>
+  </g>
+
+  <line x1="256" y1="70" x2="256" y2="442" stroke="#292524" stroke-width="2" opacity=".15"/>
 </svg>
