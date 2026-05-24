@@ -398,13 +398,14 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         {[...players].sort((a, b) => liveCourtMs(b.id) - liveCourtMs(a.id)).map(p => {
                             const ms = liveCourtMs(p.id);
                             const totalMs = liveTotalMs > 0 ? liveTotalMs : 1;
-                            const pct = (ms / totalMs * 100).toFixed(1);
+                            const pct = Math.round(ms / totalMs * 100);
                             return (
                                 <div key={p.id} className="srow">
                                     <div><span className="srow-num">#{p.number}</span><span style={{ fontWeight: 600 }}>{p.name}</span>
                                         {p.onCourt && <span style={{ fontSize: 9, color: "var(--green)", marginLeft: 6 }}>● LIVE</span>}
                                     </div>
-                                    <div style={{ textAlign: "right" }}><div className="srow-time" style={{ fontSize: 18 }}>{fmtMs(ms)}</div><div className="srow-pct" style={{ fontSize: 15 }}>{pct}%</div></div>
+                                    <div className="srow-time">{fmtMs(ms)}</div>
+                                    <div className="srow-pct">{pct}%</div>
                                 </div>
                             );
                         })}

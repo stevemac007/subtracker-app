@@ -161,11 +161,11 @@ const GlobalStyles = () => {
     .modal-title { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:3px; color:var(--amber); margin-bottom:14px; text-align:center; }
 
     /* Stats rows */
-    .srow { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--panel-border); font-size:13px; }
+    .srow { display:grid; grid-template-columns:1fr auto auto; gap:12px; align-items:center; padding:7px 0; border-bottom:1px solid var(--panel-border); font-size:13px; }
     .srow:last-child { border-bottom:none; }
     .srow-num { color:var(--amber); font-family:'Bebas Neue',sans-serif; margin-right:6px; }
-    .srow-time { font-family:'DM Mono',monospace; color:var(--amber); font-size:18px; }
-    .srow-pct  { font-size:15px; color:var(--text-dim); }
+    .srow-time { font-family:'DM Mono',monospace; color:var(--amber); font-size:18px; text-align:center; }
+    .srow-pct  { font-family:'DM Mono',monospace; font-size:14px; color:var(--text-dim); text-align:right; min-width:40px; }
 
     /* Log entry */
     .log-entry { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--panel-border); font-size:12px; color:var(--text-dim); }

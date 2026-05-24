@@ -5,8 +5,8 @@ const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
     const [theme, setTheme] = useState(() => {
-        try { return localStorage.getItem("subtracker-theme") || "scoreboard"; }
-        catch { return "scoreboard"; }
+        try { return localStorage.getItem("subtracker-theme") || "hardwood"; }
+        catch { return "hardwood"; }
     });
 
     useEffect(() => {
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }) {
     }, []);
 
     return (
-        <ThemeContext.Provider value={{ theme, setTheme, cycleTheme, vars: THEMES[theme]?.vars || THEMES.scoreboard.vars }}>
+        <ThemeContext.Provider value={{ theme, setTheme, cycleTheme, vars: THEMES[theme]?.vars || THEMES.hardwood.vars }}>
             {children}
         </ThemeContext.Provider>
     );
