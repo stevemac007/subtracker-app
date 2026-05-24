@@ -45,11 +45,11 @@ export default function GameConfigModal({ settings, onSave, onClose, opponent, o
                 {/* Display toggles */}
                 <div style={{ marginBottom: 16 }}>
                     <label style={labelStyle}>DISPLAY OPTIONS</label>
-                    <SwitchRow label="Show court stint time" checked={local.showCourtStint} onChange={v => update("showCourtStint", v)} />
-                    <SwitchRow label="Show bench stint time" checked={local.showBenchStint} onChange={v => update("showBenchStint", v)} />
-                    <SwitchRow label="Show game time %" checked={local.showGamePct} onChange={v => update("showGamePct", v)} />
-                    <SwitchRow label="Show jersey numbers" checked={local.showPlayerNumber} onChange={v => update("showPlayerNumber", v)} />
-                    <SwitchRow label="Compact cards" checked={local.compactCards} onChange={v => update("compactCards", v)} />
+                    <SwitchRow label="Show court stint time" info="Shows how long each player has been on court in their current stint" checked={local.showCourtStint} onChange={v => update("showCourtStint", v)} />
+                    <SwitchRow label="Show bench stint time" info="Shows how long each bench player has been sitting out" checked={local.showBenchStint} onChange={v => update("showBenchStint", v)} />
+                    <SwitchRow label="Show game time %" info="Displays percentage of total game time each player has been on court" checked={local.showGamePct} onChange={v => update("showGamePct", v)} />
+                    <SwitchRow label="Show jersey numbers" info="Show or hide jersey numbers on player cards" checked={local.showPlayerNumber} onChange={v => update("showPlayerNumber", v)} />
+                    <SwitchRow label="Simplified controls" info="Replaces full clock controls with simple Start/Pause/End period buttons" checked={local.simplifiedControls} onChange={v => update("simplifiedControls", v)} />
                 </div>
 
                 {/* Warning times */}
@@ -109,14 +109,25 @@ function ToggleBtn({ active, onClick, children }) {
     );
 }
 
-function SwitchRow({ label, checked, onChange }) {
+function SwitchRow({ label, info, checked, onChange }) {
+    const [showInfo, setShowInfo] = useState(false);
     return (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--panel-border)" }}>
-            <span style={{ fontSize: 12, color: "var(--text)" }}>{label}</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid var(--panel-border)", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, color: "var(--text)" }}>{label}</span>
+                {info && (
+                    <button onClick={() => setShowInfo(v => !v)} style={{
+                        width: 16, height: 16, borderRadius: 8, border: "1px solid var(--panel-border)",
+                        background: "transparent", color: "var(--text-dim)", cursor: "pointer",
+                        fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1, padding: 0, flexShrink: 0,
+                    }}>i</button>
+                )}
+            </div>
             <button onClick={() => onChange(!checked)} style={{
                 width: 36, height: 20, borderRadius: 10, border: "none", cursor: "pointer",
                 background: checked ? "var(--green)" : "rgba(255,255,255,.12)",
-                position: "relative", transition: "background .15s",
+                position: "relative", transition: "background .15s", flexShrink: 0,
             }}>
                 <span style={{
                     position: "absolute", top: 2, left: checked ? 18 : 2,
@@ -125,6 +136,16 @@ function SwitchRow({ label, checked, onChange }) {
                     boxShadow: "0 1px 3px rgba(0,0,0,.3)",
                 }} />
             </button>
+            {showInfo && (
+                <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10,
+                    background: "var(--panel)", border: "1px solid var(--amber-dim)",
+                    borderRadius: 5, padding: "8px 10px", fontSize: 11, color: "var(--text-dim)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,.3)", marginTop: 2,
+                }} onClick={() => setShowInfo(false)}>
+                    {info}
+                </div>
+            )}
         </div>
     );
 }

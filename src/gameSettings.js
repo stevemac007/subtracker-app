@@ -8,7 +8,7 @@ const DEFAULTS = {
     courtWarningMin: 10,     // highlight court player after N minutes in current stint
     benchWarningMin: 6,      // highlight bench player after N minutes in current stint
     showPlayerNumber: true,  // show jersey number on cards
-    compactCards: false,     // smaller player cards
+    simplifiedControls: true, // simplified clock: Start/End period + Pause only
 };
 
 export function loadGameSettings() {

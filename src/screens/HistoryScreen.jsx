@@ -201,6 +201,10 @@ export default function HistoryScreen({ db, onBack, onResume, activeTeamId, init
                                     <span className="log-t">{selectedPeriodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
                                     <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>
                                 </>}
+                                {e.type === 'period_end' && <>
+                                    <span className="log-t">{selectedPeriodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                    <span style={{ color: "var(--text-mid)" }}>■ {e.detail} ended</span>
+                                </>}
                             </div>
                         ));
                     })()}

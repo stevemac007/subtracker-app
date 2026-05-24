@@ -144,6 +144,16 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const startClock = useCallback(() => {
         if (runningRef.current) return;
         const w = Date.now();
+        // If starting a fresh period (not Q1 and clock is at 0), log the quarter_change
+        if (quarter > 1 && periodAccMs.current === 0 && gameAccMs.current === 0) {
+            const label = periodType === "halves"
+                ? (quarter === 3 ? "OT" : `H${quarter}`)
+                : (quarter === 5 ? "OT" : `Q${quarter}`);
+            db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+                [gameId, 'quarter_change', 0, quarter, label, w]);
+            saveDb(db);
+            setEventLog(log => [{ type: 'quarter_change', time: fmt(0), quarter, detail: label, ts: w - 1, wallTime: w }, ...log].slice(0, 100));
+        }
         clockStartWall.current = w;
         runningRef.current = true;
         players.forEach(p => { if (p.onCourt) stintStart.current[p.id] = w; stintRoleStart.current[p.id] = w; });
@@ -190,6 +200,25 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
     const toggleClock = () => runningRef.current ? pauseClock() : startClock();
     const zeroClock = () => { pauseClock(); gameAccMs.current = 0; periodAccMs.current = 0; };
+
+    const endPeriod = () => {
+        pauseClock();
+        const gameSec = Math.floor(gameAccMs.current / 1000);
+        const wallTime = Date.now();
+        const label = periodType === "halves"
+            ? (quarter === 3 ? "OT" : `H${quarter}`)
+            : (quarter === 5 ? "OT" : `Q${quarter}`);
+        db.run("INSERT INTO game_events (game_id,event_type,game_time_sec,quarter,detail,wall_time) VALUES (?,?,?,?,?,?)",
+            [gameId, 'period_end', gameSec, quarter, label, wallTime]);
+        saveDb(db);
+        setEventLog(log => [{ type: 'period_end', time: fmt(gameSec), quarter, detail: label, ts: wallTime, wallTime }, ...log].slice(0, 100));
+        gameAccMs.current = 0;
+        periodAccMs.current = 0;
+        const maxPeriod = periodLabels.length;
+        if (quarter < maxPeriod) {
+            setQuarter(quarter + 1);
+        }
+    };
 
     const tapPlayer = (pid) => {
         const p = players.find(x => x.id === pid);
@@ -310,21 +339,44 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
                 <div className="clock-bar">
                     <div className={`clock-disp ${isRunning ? "" : "paused"}`}>{fmt(displayClockMs / 1000)}</div>
-                    <div className="clock-mid">
-                        <div className="qbtns">
-                            {periodLabels.map((q, i) => (
-                                <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
-                                    onClick={() => changeQuarter(i + 1)}>{q}</button>
-                            ))}
-                        </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <div className="cbtns">
-                                <button className="cbtn cbtn-play" onClick={toggleClock}>{isRunning ? "⏸ PAUSE" : "▶ START"}</button>
-                                <button className="cbtn cbtn-zero" onClick={zeroClock}>ZERO</button>
+                    {gameSettings.simplifiedControls ? (
+                        <div className="clock-mid">
+                            <span className="period-pill" style={{ fontSize: 12, marginBottom: 4 }}>{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
+                            <div className="cbtns" style={{ width: "100%" }}>
+                                {!isRunning && (
+                                    <button className="cbtn cbtn-play" style={{ flex: 1 }} onClick={startClock}>
+                                        {periodAccMs.current > 0 ? "▶ RESUME" : "▶ START"} {periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]}
+                                    </button>
+                                )}
+                                {isRunning && (
+                                    <button className="cbtn cbtn-zero" style={{ flex: 1 }} onClick={pauseClock}>
+                                        ⏸ PAUSE
+                                    </button>
+                                )}
+                                {!isRunning && periodAccMs.current > 0 && (
+                                    <button className="cbtn cbtn-zero" style={{ flex: 1 }} onClick={endPeriod}>
+                                        ⏹ END {periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]}
+                                    </button>
+                                )}
                             </div>
-                            <span className="period-pill">{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="clock-mid">
+                            <div className="qbtns">
+                                {periodLabels.map((q, i) => (
+                                    <button key={q} className={`qbtn ${quarter === i + 1 ? "active" : ""}`}
+                                        onClick={() => changeQuarter(i + 1)}>{q}</button>
+                                ))}
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <div className="cbtns">
+                                    <button className="cbtn cbtn-play" onClick={toggleClock}>{isRunning ? "⏸ PAUSE" : "▶ START"}</button>
+                                    <button className="cbtn cbtn-zero" onClick={zeroClock}>ZERO</button>
+                                </div>
+                                <span className="period-pill">{periodLabels[quarter - 1] ?? periodLabels[periodLabels.length - 1]} · {isRunning ? "LIVE" : "STOPPED"}</span>
+                            </div>
+                        </div>
+                    )}
                     <button className={`hbtn${sortMode === "stint" ? " active" : ""}`}
                         style={{ writingMode: "vertical-lr", padding: "14px 14px", fontSize: 14, letterSpacing: 2, lineHeight: 1 }}
                         onClick={() => setGameSettings(s => { const n = { ...s, sortMode: s.sortMode === "game" ? "stint" : "game" }; saveGameSettings(n); return n; })}>
@@ -481,6 +533,10 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                                     {e.type === 'quarter_change' && <>
                                         <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
                                         <span style={{ color: "var(--blue)" }}>◆ {e.detail} started</span>
+                                    </>}
+                                    {e.type === 'period_end' && <>
+                                        <span className="log-t">{periodType === "halves" ? (e.quarter === 3 ? "OT" : `H${e.quarter}`) : (e.quarter === 5 ? "OT" : `Q${e.quarter}`)} {e.time}</span>
+                                        <span style={{ color: "var(--text-mid)" }}>■ {e.detail} ended</span>
                                     </>}
                                 </div>
                             ));
