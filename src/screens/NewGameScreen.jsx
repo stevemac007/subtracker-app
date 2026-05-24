@@ -117,8 +117,8 @@ export default function NewGameScreen({ db, onStart, onBack, activeTeamId }) {
                     const isStarter = starters.has(p.id);
                     return (
                         <div key={p.id} className="player-setup-row">
-                            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, color: "var(--amber)", minWidth: 36, textAlign: "center" }}>{p.number || "–"}</span>
-                            <span style={{ flex: 1, fontSize: 13, fontWeight: 600, opacity: isActive ? 1 : 0.4 }}>{p.name}</span>
+                            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, color: "var(--amber)", textAlign: "center" }}>{p.number || "–"}</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, opacity: isActive ? 1 : 0.4 }}>{p.name}</span>
                             <button className={`tog ${isActive ? "on" : ""}`} onClick={() => toggleActive(p.id)}>
                                 {isActive ? "IN" : "OUT"}
                             </button>

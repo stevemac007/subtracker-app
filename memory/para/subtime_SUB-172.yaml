@@ -1,0 +1,19 @@
+# Memory: SUB-172 - GCP Gmail OAuth setup scaffolding
+- id: SUB-172
+- type: task
+- status: in_progress
+- description: Set up GCP project and OAuth for subtimeapp@gmail.com Gmail access
+- created_at: 2026-05-04
+- facts:
+  - key: gcp_project_name
+    value: paperclip-subtimeapp-gcp
+  - key: gmail_account
+    value: subtimeapp@gmail.com
+  - key: scope
+    value: Gmail API access via OAuth 2.0
+  - key: next_actions
+    value: Create GCP project, enable Gmail API, configure OAuth consent, create OAuth 2.0 client, document secure storage, test flow
+  - key: plan_link
+    value: openspec/changes/subtime-gcp-oauth/plan.md
+  - key: progress
+    value: planning initiated; plan.md drafted

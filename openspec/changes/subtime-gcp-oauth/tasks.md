@@ -1,0 +1,10 @@
+- 1. Create GCP project named paperclip-subtimeapp-gcp
+- 2. Enable Gmail API on the project
+- 3. Configure OAuth consent screen
+- 4. Create OAuth 2.0 Client ID (Web application)
+- 5. Add authorized redirect URI(s) for the app (e.g., https://your-app-domain/oauth2callback)
+- 6. Configure secure storage for client_id and client_secret (Secret Manager or Vault)
+- 7. Document the setup in docs (security notes, setup guide)
+- 8. Run a test OAuth flow in a sandbox account (subtimeapp@gmail.com)
+- 9. Review with security/QA and finalize handoff
+- 10. If needed, prepare for production rollout with access controls
