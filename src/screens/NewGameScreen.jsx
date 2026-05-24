@@ -5,9 +5,17 @@ import GlobalStyles from "../GlobalStyles.jsx";
 
 export default function NewGameScreen({ db, onStart, onBack, activeTeamId }) {
     const teamName = dbGet(db, "SELECT name FROM team WHERE id = ?", [activeTeamId])?.name ?? "My Team";
-    const allPlayers = dbAll(db, "SELECT * FROM players WHERE active = 1 AND team_id = ? ORDER BY id", [activeTeamId]);
+    const allPlayers = dbAll(db, "SELECT * FROM players WHERE active = 1 AND team_id = ? ORDER BY id", [activeTeamId])
+        .sort((a, b) => {
+            const numA = parseInt(a.number, 10);
+            const numB = parseInt(b.number, 10);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            if (!isNaN(numA)) return -1;
+            if (!isNaN(numB)) return 1;
+            return a.name.localeCompare(b.name);
+        });
 
-    const [opponent, setOpponent] = useState("Opponent");
+    const [opponent, setOpponent] = useState("");
     const [periodType, setPeriodType] = useState("quarters");
     const [clockDirection, setClockDirection] = useState("up");
     const [periodMinutes, setPeriodMinutes] = useState(10);
@@ -39,7 +47,7 @@ export default function NewGameScreen({ db, onStart, onBack, activeTeamId }) {
         });
     };
 
-    const canStart = active.size >= 5 && starters.size === 5;
+    const canStart = active.size >= 5 && starters.size === 5 && opponent.trim().length > 0;
 
     const handleStart = () => {
         if (!canStart) return;
@@ -112,25 +120,27 @@ export default function NewGameScreen({ db, onStart, onBack, activeTeamId }) {
                     <div className="empty">No active players — go to Roster to add players first.</div>
                 )}
 
-                {allPlayers.map(p => {
-                    const isActive = active.has(p.id);
-                    const isStarter = starters.has(p.id);
-                    return (
-                        <div key={p.id} className="player-setup-row">
-                            <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, color: "var(--amber)", textAlign: "center" }}>{p.number || "–"}</span>
-                            <span style={{ fontSize: 14, fontWeight: 600, opacity: isActive ? 1 : 0.4 }}>{p.name}</span>
-                            <button className={`tog ${isActive ? "on" : ""}`} onClick={() => toggleActive(p.id)}>
-                                {isActive ? "IN" : "OUT"}
-                            </button>
-                            <button className={`tog ${isStarter ? "start-on" : ""}`}
-                                style={{ opacity: isActive ? 1 : 0.3 }}
-                                disabled={!isActive}
-                                onClick={() => toggleStarter(p.id)}>
-                                {isStarter ? "START" : "BENCH"}
-                            </button>
-                        </div>
-                    );
-                })}
+                <div className="player-setup-list">
+                    {allPlayers.map(p => {
+                        const isActive = active.has(p.id);
+                        const isStarter = starters.has(p.id);
+                        return (
+                            <div key={p.id} className="player-setup-row">
+                                <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 18, color: "var(--amber)", textAlign: "center" }}>{p.number || "–"}</span>
+                                <span style={{ fontSize: 14, fontWeight: 600, opacity: isActive ? 1 : 0.4 }}>{p.name}</span>
+                                <button className={`tog ${isActive ? "on" : ""}`} onClick={() => toggleActive(p.id)}>
+                                    {isActive ? "IN" : "OUT"}
+                                </button>
+                                <button className={`tog ${isStarter ? "start-on" : ""}`}
+                                    style={{ opacity: isActive ? 1 : 0.3 }}
+                                    disabled={!isActive}
+                                    onClick={() => toggleStarter(p.id)}>
+                                    {isStarter ? "START" : "BENCH"}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
 
                 <div className="note" style={{ marginTop: 12 }}>
                     <span>{active.size}</span> players active · <span>{starters.size}/5</span> starters selected

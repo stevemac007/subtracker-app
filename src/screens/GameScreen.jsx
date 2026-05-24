@@ -22,7 +22,8 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
     const [showLog, setShowLog] = useState(false);
     const [sortMode, setSortMode] = useState("game");
     const [eventLog, setEventLog] = useState([]);
-
+    const [toast, setToast] = useState(null);
+    const toastTimer = useRef(null);
     // ── Wall-clock timing ──
     const runningRef = useRef(false);
     const gameAccMs = useRef((gameRow?.total_secs ?? 0) * 1000);
@@ -240,6 +241,15 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
 
         setEventLog(log => [...newLog, ...log].slice(0, 100));
         setSelOut(new Set()); setSelIn(new Set());
+
+        // Show toast
+        const toastMsg = pairs.map(({ out: oid, in: iid }) => {
+            const op = players.find(p => p.id === oid), ip = players.find(p => p.id === iid);
+            return `${op?.name} → ${ip?.name}`;
+        }).join("  ·  ");
+        if (toastTimer.current) clearTimeout(toastTimer.current);
+        setToast(toastMsg);
+        toastTimer.current = setTimeout(() => setToast(null), 15000);
     };
 
     const cancelSel = () => { setSelOut(new Set()); setSelIn(new Set()); };
@@ -278,6 +288,12 @@ export default function GameScreen({ db, gameId, initialPlayers, onEnd }) {
                         <button className="hbtn hbtn-lg" onClick={endGame}>END</button>
                     </div>
                 </div>
+
+                {toast && (
+                    <div className="sub-toast" onClick={() => setToast(null)}>
+                        <span className="sub-toast-label">SUB</span> {toast}
+                    </div>
+                )}
 
                 <div className="clock-bar">
                     <div className={`clock-disp ${isRunning ? "" : "paused"}`}>{fmt(displayClockMs / 1000)}</div>

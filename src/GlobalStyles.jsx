@@ -175,6 +175,11 @@ const GlobalStyles = () => {
     /* Empty state */
     .empty { padding:24px; text-align:center; font-size:13px; color:var(--text-dim); font-style:italic; }
 
+    /* Sub toast */
+    .sub-toast { flex-shrink:0; display:flex; align-items:center; gap:8px; padding:8px 14px; background:rgba(34,197,94,.12); border-bottom:1px solid rgba(34,197,94,.3); font-family:'Inter',sans-serif; font-size:13px; font-weight:500; color:var(--text); cursor:pointer; animation:toast-in .2s ease-out; }
+    .sub-toast-label { font-family:'Bebas Neue',sans-serif; font-size:11px; letter-spacing:1.5px; color:var(--green); background:rgba(34,197,94,.15); padding:2px 6px; border-radius:3px; }
+    @keyframes toast-in { from { opacity:0; transform:translateY(-100%); } to { opacity:1; transform:translateY(0); } }
+
     /* Note label */
     .note { font-size:11px; color:var(--text-dim); text-align:center; margin:8px 0; }
     .note span { font-family:'DM Mono',monospace; color:var(--amber); }
